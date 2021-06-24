@@ -3,94 +3,85 @@
 //  COPYING file in the root directory) and Apache 2.0 License
 //  (found in the LICENSE.Apache file in the root directory).
 
-#include <rocksdb/compaction_filter.h>
-#include <rocksdb/db.h>
-#include <rocksdb/merge_operator.h>
-#include <rocksdb/options.h>
+#include <cstdio>
+#include <string>
 
-class MyMerge : public ROCKSDB_NAMESPACE::MergeOperator {
- public:
-  virtual bool FullMergeV2(const MergeOperationInput& merge_in,
-                           MergeOperationOutput* merge_out) const override {
-    merge_out->new_value.clear();
-    if (merge_in.existing_value != nullptr) {
-      merge_out->new_value.assign(merge_in.existing_value->data(),
-                                  merge_in.existing_value->size());
-    }
-    for (const ROCKSDB_NAMESPACE::Slice& m : merge_in.operand_list) {
-      fprintf(stderr, "Merge(%s)\n", m.ToString().c_str());
-      // the compaction filter filters out bad values
-      assert(m.ToString() != "bad");
-      merge_out->new_value.assign(m.data(), m.size());
-    }
-    return true;
-  }
+#include "rocksdb/db.h"
+#include "rocksdb/slice.h"
+#include "rocksdb/options.h"
 
-  const char* Name() const override { return "MyMerge"; }
-};
-
-class MyFilter : public ROCKSDB_NAMESPACE::CompactionFilter {
- public:
-  bool Filter(int level, const ROCKSDB_NAMESPACE::Slice& key,
-              const ROCKSDB_NAMESPACE::Slice& existing_value,
-              std::string* new_value, bool* value_changed) const override {
-    fprintf(stderr, "Filter(%s)\n", key.ToString().c_str());
-    ++count_;
-    assert(*value_changed == false);
-    return false;
-  }
-
-  bool FilterMergeOperand(
-      int level, const ROCKSDB_NAMESPACE::Slice& key,
-      const ROCKSDB_NAMESPACE::Slice& existing_value) const override {
-    fprintf(stderr, "FilterMerge(%s)\n", key.ToString().c_str());
-    ++merge_count_;
-    return existing_value == "bad";
-  }
-
-  const char* Name() const override { return "MyFilter"; }
-
-  mutable int count_ = 0;
-  mutable int merge_count_ = 0;
-};
+using namespace ROCKSDB_NAMESPACE;
 
 #if defined(OS_WIN)
-std::string kDBPath = "C:\\Windows\\TEMP\\rocksmergetest";
-std::string kRemoveDirCommand = "rmdir /Q /S ";
+std::string kDBPath = "C:\\Windows\\TEMP\\rocksdb_simple_example";
 #else
-std::string kDBPath = "/tmp/rocksmergetest";
-std::string kRemoveDirCommand = "rm -rf ";
+std::string kDBPath = "/tmp/rocksdb_simple_example";
 #endif
 
 int main() {
-  ROCKSDB_NAMESPACE::DB* raw_db;
-  ROCKSDB_NAMESPACE::Status status;
-
-  MyFilter filter;
-
-  std::string rm_cmd = kRemoveDirCommand + kDBPath;
-  int ret = system(rm_cmd.c_str());
-  if (ret != 0) {
-    fprintf(stderr, "Error deleting %s, code: %d\n", kDBPath.c_str(), ret);
-  }
-  ROCKSDB_NAMESPACE::Options options;
+  DB* db;
+  Options options;
+  // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
+  options.IncreaseParallelism();
+  options.OptimizeLevelStyleCompaction();
+  // create the DB if it's not already present
   options.create_if_missing = true;
-  options.merge_operator.reset(new MyMerge);
-  options.compaction_filter = &filter;
-  status = ROCKSDB_NAMESPACE::DB::Open(options, kDBPath, &raw_db);
-  assert(status.ok());
-  std::unique_ptr<ROCKSDB_NAMESPACE::DB> db(raw_db);
 
-  ROCKSDB_NAMESPACE::WriteOptions wopts;
-  db->Merge(wopts, "0", "bad");  // This is filtered out
-  db->Merge(wopts, "1", "data1");
-  db->Merge(wopts, "1", "bad");
-  db->Merge(wopts, "1", "data2");
-  db->Merge(wopts, "1", "bad");
-  db->Merge(wopts, "3", "data3");
-  db->CompactRange(ROCKSDB_NAMESPACE::CompactRangeOptions(), nullptr, nullptr);
-  fprintf(stderr, "filter.count_ = %d\n", filter.count_);
-  assert(filter.count_ == 0);
-  fprintf(stderr, "filter.merge_count_ = %d\n", filter.merge_count_);
-  assert(filter.merge_count_ == 6);
+  // open DB
+  Status s = DB::Open(options, kDBPath, &db);
+  assert(s.ok());
+
+  // Put key-value
+  s = db->Put(WriteOptions(), "key1", "value");
+  assert(s.ok());
+  std::string value;
+  // get value
+  s = db->Get(ReadOptions(), "key1", &value);
+  assert(s.ok());
+  assert(value == "value");
+
+  // atomically apply a set of updates
+  {
+    WriteBatch batch;
+    batch.Delete("key1");
+    batch.Put("key2", value);
+    s = db->Write(WriteOptions(), &batch);
+  }
+
+  s = db->Get(ReadOptions(), "key1", &value);
+  assert(s.IsNotFound());
+
+  db->Get(ReadOptions(), "key2", &value);
+  assert(value == "value");
+
+  {
+    PinnableSlice pinnable_val;
+    db->Get(ReadOptions(), db->DefaultColumnFamily(), "key2", &pinnable_val);
+    assert(pinnable_val == "value");
+  }
+
+  {
+    std::string string_val;
+    // If it cannot pin the value, it copies the value to its internal buffer.
+    // The intenral buffer could be set during construction.
+    PinnableSlice pinnable_val(&string_val);
+    db->Get(ReadOptions(), db->DefaultColumnFamily(), "key2", &pinnable_val);
+    assert(pinnable_val == "value");
+    // If the value is not pinned, the internal buffer must have the value.
+    assert(pinnable_val.IsPinned() || string_val == "value");
+  }
+
+  PinnableSlice pinnable_val;
+  s = db->Get(ReadOptions(), db->DefaultColumnFamily(), "key1", &pinnable_val);
+  assert(s.IsNotFound());
+  // Reset PinnableSlice after each use and before each reuse
+  pinnable_val.Reset();
+  db->Get(ReadOptions(), db->DefaultColumnFamily(), "key2", &pinnable_val);
+  assert(pinnable_val == "value");
+  pinnable_val.Reset();
+  // The Slice pointed by pinnable_val is not valid after this point
+
+  delete db;
+
+  return 0;
 }
