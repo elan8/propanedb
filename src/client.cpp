@@ -63,7 +63,7 @@ class DatabaseClient {
     request.set_allocated_data(anyMessage);
 
     // Container for the data we expect from the server.
-    PropaneStatus reply;
+    PropaneId reply;
 
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
@@ -74,13 +74,51 @@ class DatabaseClient {
 
     // Act upon its status.
     if (status.ok()) {
-      return reply.statusmessage();
+      return reply.id();
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
       return "RPC failed";
     }
   }
+
+  google::protobuf::Any Get(string id) {
+
+    // TestEntity entity;
+    // string id ("abc");
+    // string data ("Test");
+    // entity.set_id(id);
+    // entity.set_data(data);
+
+    //Any* anyMessage = new Any();
+    //anyMessage->PackFrom(entity);
+
+    // Data we are sending to the server.
+    PropaneId request;
+    request.set_id(id);
+
+    // Container for the data we expect from the server.
+    PropaneEntity reply;
+
+    // Context for the client. It could be used to convey extra information to
+    // the server and/or tweak certain RPC behaviors.
+    ClientContext context;
+
+    // The actual RPC.
+    Status status = stub_->Get(&context, request, &reply);
+
+    // Act upon its status.
+    if (status.ok()) {
+      return reply.data();
+    } else {
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
+      //return "RPC failed";
+      google::protobuf::Any any;
+      return any;
+    }
+  }
+
 
  private:
   std::unique_ptr<Database::Stub> stub_;
@@ -113,11 +151,14 @@ int main(int argc, char** argv) {
   } else {
     target_str = "localhost:50051";
   }
-  DatabaseClient greeter(
+  DatabaseClient propaneClient(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply = greeter.Put();
-  std::cout << "Greeter received: " << reply << std::endl;
+  //std::string user("world");
+  std::string id= propaneClient.Put();
+  std::cout << "Put: ID received: " << id << std::endl;
+
+  google::protobuf::Any any = propaneClient.Get(id );
+  std::cout << "Get: any receive: " << any.DebugString() << std::endl;
 
   return 0;
 }

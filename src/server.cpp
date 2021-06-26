@@ -1,25 +1,6 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 #include <iostream>
 #include <memory>
 #include <string>
-//#include <string>
 #include <sstream>
 #include <vector>
 #include <iterator>
@@ -96,7 +77,7 @@ public:
   }
 
   grpc::Status Put(ServerContext *context, const PropaneEntity *request,
-                   PropaneStatus *reply) override
+                   PropaneId *reply) override
   {
     //std::string prefix("Hello ");
     //reply->set_message(prefix + request->name());
@@ -124,29 +105,30 @@ public:
       string id = reflection->GetString(*message, fd);
       cout << "Message ID= " << id << endl;
 
-      string serializedAny ;
+      string serializedAny;
       any.SerializeToString(&serializedAny);
 
-      ROCKSDB_NAMESPACE::Status s = db->Put(WriteOptions(), id,  serializedAny);
+      ROCKSDB_NAMESPACE::Status s = db->Put(WriteOptions(), id, serializedAny);
       assert(s.ok());
+      reply->set_id(id);
     }
 
-    propane::TestEntity test;
-    typeName = test.GetTypeName();
-    cout << "Type name=" << typeName << endl;
-    //string clazzName =strtok(typeUrl,"/")[1]
-    //string clazzName = typeUrl.split("/")[1];
-    //string clazzPackage = sprintf("package.%s", clazzName);
-    //Class<Message> clazz = (Class<Message>) Class.forName(clazzPackage);
-    //return childMessage.unpack(clazz);
-    //any.UnpackTo(message);
-    //String clazzName = any->getTypeUrl().split("/")[1];
-    //any->PackFrom(entity);
+    
+    return grpc::Status::OK;
+  }
 
-    //ROCKSDB_NAMESPACE::Status s = db->Put(WriteOptions(), request->data(), "value");
-    //assert(s.ok());
+  grpc::Status Get(ServerContext *context, const PropaneId *request,
+                   PropaneEntity *reply) override
+  {
 
-    reply->set_statusmessage("OK");
+    string serializedAny;
+    ROCKSDB_NAMESPACE::Status s = db->Get(ReadOptions(), request->id(), &serializedAny);
+    
+    google::protobuf::Any* any = new Any();
+    any->ParseFromString(serializedAny);
+
+    reply->set_allocated_data(any);
+    //reply->set_statusmessage("OK");
     return grpc::Status::OK;
   }
 

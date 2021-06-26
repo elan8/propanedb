@@ -16,7 +16,7 @@ package propane;
 service Database {
   // Sends a greeting
   //rpc SayHello (HelloRequest) returns (HelloReply) {}
-  rpc Put (PropaneEntity) returns (PropaneStatus) {}
+  rpc Put (PropaneEntity) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
 }
 
