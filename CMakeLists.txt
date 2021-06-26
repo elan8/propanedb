@@ -21,10 +21,8 @@ include(FetchContent)
 set(gRPC_BUILD_TESTS  OFF)
 set(gRPC_BUILD_CODEGEN ON)
 set(gRPC_BUILD_CSHARP_EXT  OFF)
-
 option(gRPC_BUILD_GRPC_PHP_PLUGIN "Build grpc_php_plugin" OFF)
 option(gRPC_BUILD_GRPC_PYTHON_PLUGIN "Build grpc_python_plugin" OFF)
-
 option(gRPC_BUILD_GRPC_RUBY_PLUGIN "Build grpc_ruby_plugin" OFF)
 
 
@@ -41,26 +39,28 @@ set(GRPC_FETCHCONTENT ON)
 
 include(./cmake/common.cmake)
 # Proto file
-get_filename_component(hw_proto "./protos/helloworld.proto" ABSOLUTE)
+get_filename_component(hw_proto "./protos/propanedb.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
+get_filename_component(base_proto "./build/_deps/grpc-src/third_party/protobuf/src" ABSOLUTE)
 
 # Generated sources
-set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.pb.cc")
-set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.pb.h")
-set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.cc")
-set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/helloworld.grpc.pb.h")
+set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.pb.cc")
+set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.pb.h")
+set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.grpc.pb.cc")
+set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.grpc.pb.h")
 add_custom_command(
       OUTPUT "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
         --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        -I "${hw_proto_path}"
+        -I "${hw_proto_path}" -I "${base_proto}"
         --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
         "${hw_proto}"
       DEPENDS "${hw_proto}")
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+#include_directories("${CMAKE_CURRENT_BINARY_DIR}/_deps/grpc-src/third_party/protobuf/src")
 
 # hw_grpc_proto
 add_library(hw_grpc_proto

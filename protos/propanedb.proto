@@ -1,0 +1,40 @@
+
+
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+
+option java_multiple_files = true;
+option java_package = "propane";
+option java_outer_classname = "PropaneProto";
+option objc_class_prefix = "Prop";
+
+package propane;
+
+// The greeting service definition.
+service Database {
+  // Sends a greeting
+  //rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc Put (PropaneEntity) returns (PropaneStatus) {}
+  rpc Get (PropaneId) returns (PropaneEntity) {}
+}
+
+// The request message containing the user's name.
+message PropaneEntity {
+  google.protobuf.Any data = 1;
+}
+
+// The response message containing the greetings
+message PropaneStatus {
+  string statusMessage = 1;
+}
+
+message PropaneId{
+  string id = 1;
+}
+
+message TestEntity{
+  string id = 1;
+  string data = 2;
+}
