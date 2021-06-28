@@ -40,6 +40,7 @@ set(GRPC_FETCHCONTENT ON)
 include(./cmake/common.cmake)
 # Proto file
 get_filename_component(hw_proto "./protos/propanedb.proto" ABSOLUTE)
+get_filename_component(test_proto "./protos/test.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 get_filename_component(base_proto "./build/_deps/grpc-src/third_party/protobuf/src" ABSOLUTE)
 
@@ -48,6 +49,10 @@ set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.pb.cc")
 set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.pb.h")
 set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.grpc.pb.cc")
 set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/propanedb.grpc.pb.h")
+set(test_hdrs "${CMAKE_CURRENT_BINARY_DIR}/test.pb.cc")
+set(test_srcs "${CMAKE_CURRENT_BINARY_DIR}/test.pb.h")
+set(descriptor "${CMAKE_CURRENT_BINARY_DIR}/descriptor.bin")
+
 add_custom_command(
       OUTPUT "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
       COMMAND ${_PROTOBUF_PROTOC}
@@ -58,33 +63,49 @@ add_custom_command(
         "${hw_proto}"
       DEPENDS "${hw_proto}")
 
+add_custom_command(
+      OUTPUT "${test_srcs}" "${test_hdrs}" 
+      COMMAND ${_PROTOBUF_PROTOC}
+      ARGS --descriptor_set_out "${CMAKE_CURRENT_BINARY_DIR}/descriptor.bin"
+      --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${hw_proto_path}" -I "${base_proto}"
+        "${test_proto}"
+      DEPENDS "${test_proto}")
+
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
-#include_directories("${CMAKE_CURRENT_BINARY_DIR}/_deps/grpc-src/third_party/protobuf/src")
-
-# hw_grpc_proto
-add_library(hw_grpc_proto
+add_library(propane_proto
   ${hw_grpc_srcs}
   ${hw_grpc_hdrs}
   ${hw_proto_srcs}
   ${hw_proto_hdrs})
-target_link_libraries(hw_grpc_proto
+target_link_libraries(propane_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
-add_executable(server src/server.cpp)
-add_dependencies(server  rocksdbProject hw_grpc_proto)
+add_library(test_proto
+  ${test_srcs}
+  ${test_hdrs}
+)
+target_link_libraries(test_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})  
+
+add_executable(server src/server.cpp )
+add_dependencies(server  rocksdbProject propane_proto)
 target_link_libraries(server rocksdb pthread 
-hw_grpc_proto
+propane_proto
 ${_REFLECTION}
 ${_GRPC_GRPCPP}
 ${_PROTOBUF_LIBPROTOBUF})
 
-add_executable(client src/client.cpp)
-add_dependencies(client  rocksdbProject hw_grpc_proto) 
+add_executable(client src/client.cpp )
+add_dependencies(client  rocksdbProject propane_proto test_proto)
 target_link_libraries(client rocksdb pthread 
-hw_grpc_proto
+propane_proto
+test_proto
 ${_REFLECTION}
 ${_GRPC_GRPCPP}
 ${_PROTOBUF_LIBPROTOBUF})

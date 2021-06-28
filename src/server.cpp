@@ -13,6 +13,7 @@
 #include "rocksdb/slice.h"
 #include "rocksdb/options.h"
 #include "propanedb.grpc.pb.h"
+#include "util.h"
 
 using google::protobuf::Any;
 using grpc::Server;
@@ -23,6 +24,7 @@ using propane::Database;
 using propane::PropaneEntity;
 using propane::PropaneId;
 using propane::PropaneStatus;
+using propane::PropaneFileDescriptor;
 
 using namespace ROCKSDB_NAMESPACE;
 using namespace std;
@@ -35,6 +37,8 @@ std::string kDBPath = "/tmp/rocksdb_simple_example";
 
 class DatabaseServiceImpl final : public Database::Service
 {
+  private:
+  DB *db;
 
 public:
   DatabaseServiceImpl()
@@ -58,38 +62,19 @@ public:
     delete db;
   }
 
-  template <typename Out>
-  void split(const std::string &s, char delim, Out result)
-  {
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item, delim))
-    {
-      *result++ = item;
-    }
-  }
 
-  std::vector<std::string> split(const std::string &s, char delim)
-  {
-    std::vector<std::string> elems;
-    split(s, delim, std::back_inserter(elems));
-    return elems;
-  }
 
   grpc::Status Put(ServerContext *context, const PropaneEntity *request,
                    PropaneId *reply) override
   {
-    //std::string prefix("Hello ");
-    //reply->set_message(prefix + request->name());
     google::protobuf::DynamicMessageFactory dmf;
-    //google::protobuf::DescriptorPool pool;
     const google::protobuf::DescriptorPool *pool = google::protobuf::DescriptorPool::generated_pool();
-    //pool->
+
 
     Any any = request->data();
     string typeUrl = any.type_url();
     cout << "Any TypeURL=" << typeUrl << endl;
-    string typeName = split(typeUrl, '/')[1];
+    string typeName = Util::split(typeUrl, "/");
     cout << "Any TypeName=" << typeName << endl;
 
     const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
@@ -112,6 +97,9 @@ public:
       assert(s.ok());
       reply->set_id(id);
     }
+    else{
+       cout << "Descriptor not found"  << endl;
+    }
 
     
     return grpc::Status::OK;
@@ -132,8 +120,22 @@ public:
     return grpc::Status::OK;
   }
 
-private:
-  DB *db;
+    grpc::Status SetFileDescriptor(ServerContext *context, const PropaneFileDescriptor *request,
+                   PropaneStatus*reply) override
+  {
+
+    // string serializedAny;
+    // ROCKSDB_NAMESPACE::Status s = db->Get(ReadOptions(), request->id(), &serializedAny);
+    
+    // google::protobuf::Any* any = new Any();
+    // any->ParseFromString(serializedAny);
+
+    // reply->set_allocated_data(any);
+    // //reply->set_statusmessage("OK");
+    return grpc::Status::OK;
+  }
+
+
 };
 
 void RunServer()

@@ -12,29 +12,24 @@ option objc_class_prefix = "Prop";
 
 package propane;
 
-// The greeting service definition.
 service Database {
-  // Sends a greeting
-  //rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SetFileDescriptor(PropaneFileDescriptor) returns (PropaneStatus) {} 
   rpc Put (PropaneEntity) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
 }
 
-// The request message containing the user's name.
+message PropaneFileDescriptor {
+  google.protobuf.FileDescriptorSet descriptor_set = 1;
+}
+
 message PropaneEntity {
   google.protobuf.Any data = 1;
 }
 
-// The response message containing the greetings
 message PropaneStatus {
   string statusMessage = 1;
 }
 
 message PropaneId{
   string id = 1;
-}
-
-message TestEntity{
-  string id = 1;
-  string data = 2;
 }
