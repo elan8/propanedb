@@ -8,9 +8,9 @@
 class Util
 {
 public:
-  static std::string split(const std::string &s, std::string delimiter)
+  static std::string getTypeName(const std::string &s)
   {
-    std::string token = s.substr(0, s.find(delimiter));
+    std::string token = s.substr(s.find("/")+1);
     return token;
   }
 };
