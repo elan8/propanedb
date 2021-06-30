@@ -2,7 +2,8 @@ syntax = "proto3";
 
 package test;
 
-message TestEntity{
+message TodoItem{
     string id = 1;
-    string data = 2;
+    string description = 2;
+    bool isDone =3 ;
   }

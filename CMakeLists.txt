@@ -3,6 +3,18 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(PropaneDB)
 
+# GoogleTest requires at least C++11
+set(CMAKE_CXX_STANDARD 11)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 include(ExternalProject)
 
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
@@ -74,6 +86,8 @@ add_custom_command(
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}/src")
+
 add_library(propane_proto
   ${hw_grpc_srcs}
   ${hw_grpc_hdrs}
@@ -93,19 +107,45 @@ target_link_libraries(test_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})  
 
-add_executable(server src/server.cpp )
+add_executable(server src/server.cpp src/DatabaseServiceImpl.cpp  )
 add_dependencies(server  rocksdbProject propane_proto)
-target_link_libraries(server rocksdb pthread 
+target_link_libraries(server 
+rocksdb 
+pthread 
 propane_proto
 ${_REFLECTION}
 ${_GRPC_GRPCPP}
 ${_PROTOBUF_LIBPROTOBUF})
 
-add_executable(client src/client.cpp )
-add_dependencies(client  rocksdbProject propane_proto test_proto)
-target_link_libraries(client rocksdb pthread 
-propane_proto
-test_proto
-${_REFLECTION}
-${_GRPC_GRPCPP}
-${_PROTOBUF_LIBPROTOBUF})
+# add_executable(client src/client.cpp )
+# add_dependencies(client  rocksdbProject propane_proto test_proto)
+# target_link_libraries(client 
+# rocksdb 
+# pthread 
+# propane_proto
+# test_proto
+# ${_REFLECTION}
+# ${_GRPC_GRPCPP}
+# ${_PROTOBUF_LIBPROTOBUF})
+
+enable_testing()
+
+add_executable(
+  server_test
+  test/server_test.cpp
+  src/DatabaseServiceImpl.cpp 
+)
+add_dependencies(server_test rocksdbProject propane_proto test_proto)
+target_link_libraries(
+  server_test
+  gtest_main
+  rocksdb 
+  pthread 
+  propane_proto
+  test_proto
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF})
+
+include(GoogleTest)
+gtest_discover_tests(server_test)
