@@ -36,17 +36,23 @@ DatabaseServiceImpl::DatabaseServiceImpl(string path)
     cout << "Any TypeURL=" << typeUrl << endl;
     string typeName = Util::getTypeName(typeUrl);
     cout << "Any TypeName=" << typeName << endl;
+    // cout << "Descriptor pool=" << descriptorDB-> << endl;
     const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
     if (descriptor != nullptr)
     {
       cout << "Descriptor=" << descriptor->DebugString() << endl;
-      google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
+      google::protobuf::Message* message = dmf.GetPrototype(descriptor)->New();
       any.UnpackTo(message);
       cout << "Message Debug String=" << message->DebugString() << endl;
 
       const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
       const google::protobuf::Reflection *reflection = message->GetReflection();
       string id = reflection->GetString(*message, fd);
+
+      if (id.length()==0){
+        id=Util::generateUUID();
+        reflection->SetString(message, fd,id);
+      }
       cout << "Message ID= " << id << endl;
 
       string serializedAny;

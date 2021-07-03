@@ -3,10 +3,30 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(PropaneDB)
 
+include(FetchContent)
+
+# Boost library
+# FetchContent_Declare(
+#   boost
+#   URL https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.zip
+# )
+#FetchContent_MakeAvailable(boost)
+#FetchContent_Populate(boost)
+#add_subdirectory(${boost_SOURCE_DIR} )
+#include_directories(${boost_SOURCE_DIR})
+
+
+
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 11)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
-include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
@@ -29,7 +49,7 @@ include_directories(${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 #GRPC
-include(FetchContent)
+#include(FetchContent)
 set(gRPC_BUILD_TESTS  OFF)
 set(gRPC_BUILD_CODEGEN ON)
 set(gRPC_BUILD_CSHARP_EXT  OFF)
@@ -48,6 +68,15 @@ set(FETCHCONTENT_QUIET OFF)
 FetchContent_MakeAvailable(gRPC)
 
 set(GRPC_FETCHCONTENT ON)
+
+
+find_package (Boost 1.76.0 PATHS ./boost REQUIRED COMPONENTS filesystem)
+
+# find_package(Boost 1.76.0)
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 
 include(./cmake/common.cmake)
 # Proto file
@@ -117,17 +146,6 @@ ${_REFLECTION}
 ${_GRPC_GRPCPP}
 ${_PROTOBUF_LIBPROTOBUF})
 
-# add_executable(client src/client.cpp )
-# add_dependencies(client  rocksdbProject propane_proto test_proto)
-# target_link_libraries(client 
-# rocksdb 
-# pthread 
-# propane_proto
-# test_proto
-# ${_REFLECTION}
-# ${_GRPC_GRPCPP}
-# ${_PROTOBUF_LIBPROTOBUF})
-
 enable_testing()
 
 add_executable(
@@ -143,9 +161,13 @@ target_link_libraries(
   pthread 
   propane_proto
   test_proto
+  Boost::filesystem
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
 include(GoogleTest)
 gtest_discover_tests(server_test)
+
+# target_link_libraries(foo Boost::date_time Boost::filesystem
+#                           Boost::iostreams)
