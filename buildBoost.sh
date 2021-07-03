@@ -1,3 +1,4 @@
+mkdir download
 cd  download
 if [ ! -f boost_1_76_0.tar.bz2 ]; then
     echo "File not found!"
