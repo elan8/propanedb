@@ -71,7 +71,8 @@ include_directories("./dependencies/deploy/include")
 link_directories("./dependencies/deploy/lib")
 LIST(APPEND CMAKE_PROGRAM_PATH "./dependencies/deploy/bin")
 
-find_package (Boost 1.76.0 PATHS ./boost REQUIRED COMPONENTS filesystem)
+#find_package (Boost 1.76.0 PATHS ./boost REQUIRED COMPONENTS filesystem)
+find_package (Boost 1.76.0 REQUIRED COMPONENTS filesystem)
 
 # find_package(Boost 1.76.0)
 if(Boost_FOUND)
