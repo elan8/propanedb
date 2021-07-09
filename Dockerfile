@@ -45,7 +45,7 @@ mkdir build && cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1 && \
 make && make install
 
-# #build propaneDB
+#build propaneDB
 WORKDIR /app 
 COPY CMakeLists.txt CMakeLists.txt 
 COPY protos protos
