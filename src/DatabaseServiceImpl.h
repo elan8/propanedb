@@ -14,7 +14,7 @@
 #include "rocksdb/options.h"
 #include "propanedb.grpc.pb.h"
 #include "util.h"
-//#include "DatabaseServiceImpl.h"
+
 
 using google::protobuf::Any;
 using grpc::Server;
@@ -22,10 +22,7 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 using propane::Database;
-using propane::PropaneEntity;
-using propane::PropaneFileDescriptor;
-using propane::PropaneId;
-using propane::PropaneStatus;
+
 
 using namespace ROCKSDB_NAMESPACE;
 using namespace std;
@@ -39,10 +36,14 @@ private:
 public:
     DatabaseServiceImpl(string path);
     ~DatabaseServiceImpl();
-    grpc::Status Put(ServerContext *context, const PropaneEntity *request,
-                     PropaneId *reply) override;
-    grpc::Status Get(ServerContext *context, const PropaneId *request,
-                     PropaneEntity *reply) override;
-    grpc::Status SetFileDescriptor(ServerContext *context, const PropaneFileDescriptor *request,
-                                   PropaneStatus *reply) override;
+    grpc::Status Put(ServerContext *context, const propane::PropaneEntity *request,
+                     propane::PropaneId *reply) override;
+    grpc::Status Get(ServerContext *context, const propane::PropaneId *request,
+                     propane::PropaneEntity *reply) override;
+    grpc::Status Delete(ServerContext *context, const propane::PropaneId *request,
+                        propane::PropaneStatus *reply) override;
+    grpc::Status Search(ServerContext *context, const propane::PropaneSearch *request,
+                        propane::PropaneEntities *reply) override;
+    grpc::Status SetFileDescriptor(ServerContext *context, const propane::PropaneFileDescriptor *request,
+                                   propane::PropaneStatus *reply) override;
 };
