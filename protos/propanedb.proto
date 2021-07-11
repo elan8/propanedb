@@ -16,10 +16,16 @@ service Database {
   rpc SetFileDescriptor(PropaneFileDescriptor) returns (PropaneStatus) {} 
   rpc Put (PropaneEntity) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
+  rpc Delete (PropaneId) returns (PropaneStatus) {}
+  rpc Search (PropaneSearch) returns (PropaneEntities) {}
 }
 
 message PropaneFileDescriptor {
   google.protobuf.FileDescriptorSet descriptor_set = 1;
+}
+
+message PropaneEntities {
+  repeated PropaneEntity entities = 1;
 }
 
 message PropaneEntity {
@@ -32,4 +38,10 @@ message PropaneStatus {
 
 message PropaneId{
   string id = 1;
+}
+
+message PropaneSearch {
+  string entityType = 1;
+  string searchParameters = 2;
+  
 }

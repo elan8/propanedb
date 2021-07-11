@@ -51,7 +51,7 @@ TEST(HelloTest, PutGet)
     fd->ParseFromString(descriptor);
     std::cout << "Descriptor: " << fd->DebugString() << std::endl;
 
-    PropaneFileDescriptor request;
+    propane::PropaneFileDescriptor request;
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
     grpc::Status s = service.SetFileDescriptor(&context, &request, &reply);
@@ -60,7 +60,7 @@ TEST(HelloTest, PutGet)
   {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity);
-    PropaneEntity request;
+    propane::PropaneEntity request;
     request.set_allocated_data(anyMessage);
 
     propane::PropaneId reply;
@@ -72,7 +72,7 @@ TEST(HelloTest, PutGet)
   }
 
   {
-    PropaneId request;
+    propane::PropaneId request;
     request.set_id(id);
 
     propane::PropaneEntity reply;

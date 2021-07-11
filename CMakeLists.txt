@@ -88,21 +88,29 @@ add_custom_command(
         "${test_proto}"
       DEPENDS "${test_proto}")
 
+add_custom_target(protoGenerate DEPENDS "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}")      
+
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories("${CMAKE_SOURCE_DIR}/src")
 include_directories("${CMAKE_SOURCE_DIR}/dependencies/grpc/third_party/abseil-cpp")
 link_directories("${CMAKE_SOURCE_DIR}/dependencies/deploy/lib")
 
-add_library(propane_proto
+add_library(propane_lib
   ${hw_grpc_srcs}
   ${hw_grpc_hdrs}
   ${hw_proto_srcs}
-  ${hw_proto_hdrs})
-target_link_libraries(propane_proto
+  ${hw_proto_hdrs}
+  src/DatabaseServiceImpl.cpp 
+  )
+  add_dependencies(propane_lib protoGenerate)
+target_link_libraries(propane_lib
+rocksdb 
+pthread 
 gRPC::grpc++_reflection
   gRPC::grpc++
   ${Protobuf_LIBRARIES})
+
 
 add_library(test_proto
   ${test_srcs}
@@ -113,12 +121,10 @@ gRPC::grpc++_reflection
   gRPC::grpc++
   ${Protobuf_LIBRARIES})  
 
-add_executable(server src/server.cpp src/DatabaseServiceImpl.cpp  )
-add_dependencies(server propane_proto)
+add_executable(server src/server.cpp  )
+add_dependencies(server propane_lib)
 target_link_libraries(server 
-rocksdb 
-pthread 
-propane_proto
+propane_lib
 gRPC::grpc++_reflection
 gRPC::grpc++
 ${Protobuf_LIBRARIES})
@@ -126,17 +132,16 @@ ${Protobuf_LIBRARIES})
 enable_testing()
 
 add_executable(
-  server_test
+  unit_test
   test/server_test.cpp
-  src/DatabaseServiceImpl.cpp 
 )
-add_dependencies(server_test propane_proto test_proto)
+add_dependencies(unit_test propane_lib test_proto)
 target_link_libraries(
-  server_test
+  unit_test
   gtest_main
   rocksdb 
   pthread 
-  propane_proto
+  propane_lib
   test_proto
   Boost::filesystem
   gRPC::grpc++_reflection
@@ -144,5 +149,5 @@ target_link_libraries(
   ${Protobuf_LIBRARIES})
 
 include(GoogleTest)
-gtest_discover_tests(server_test)
+gtest_discover_tests(unit_test)
 
