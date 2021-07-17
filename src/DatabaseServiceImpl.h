@@ -14,6 +14,7 @@
 #include "rocksdb/options.h"
 #include "propanedb.grpc.pb.h"
 #include "util.h"
+#include <glog/logging.h>
 
 
 using google::protobuf::Any;
@@ -32,6 +33,7 @@ class DatabaseServiceImpl final : public Database::Service
 private:
     DB *db;
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
+    //grpc::Status* status;
 
 public:
     DatabaseServiceImpl(string path);

@@ -32,17 +32,17 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
 
   Any any = request->data();
   string typeUrl = any.type_url();
-  cout << "Any TypeURL=" << typeUrl << endl;
+  LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
-  cout << "Any TypeName=" << typeName << endl;
+  LOG(INFO) << "Any TypeName=" << typeName << endl;
   // cout << "Descriptor pool=" << descriptorDB-> << endl;
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor != nullptr)
   {
-    cout << "Descriptor=" << descriptor->DebugString() << endl;
+    LOG(INFO) << "Descriptor=" << descriptor->DebugString() << endl;
     google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
     any.UnpackTo(message);
-    cout << "Message Debug String=" << message->DebugString() << endl;
+    LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
 
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
     const google::protobuf::Reflection *reflection = message->GetReflection();
@@ -53,7 +53,7 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
       id = Util::generateUUID();
       reflection->SetString(message, fd, id);
     }
-    cout << "Message ID= " << id << endl;
+    LOG(INFO) << "Message ID= " << id << endl;
 
     string serializedAny;
     any.SerializeToString(&serializedAny);
@@ -64,10 +64,10 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
   }
   else
   {
-    cout << "Descriptor not found" << endl;
+    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
 
-  return grpc::Status::OK;
+ return grpc::Status::OK;
 }
 
 grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::PropaneId *request,
@@ -84,21 +84,35 @@ grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::Pro
 grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::PropaneId *request,
                                          propane::PropaneStatus *reply)
 {
-  ROCKSDB_NAMESPACE::Status s = db->Delete(WriteOptions(), request->id());
+
+  //throw an error if no object with this key exists
+  string serializedAny;
+  ROCKSDB_NAMESPACE::Status s = db->Get(ReadOptions(), request->id(), &serializedAny);
   if (s.ok())
   {
-    return grpc::Status::OK;
+    ROCKSDB_NAMESPACE::Status s = db->Delete(WriteOptions(), request->id());
+    LOG(INFO) << "Delete status= " << s.ToString() << endl;
+
+    if (!s.ok())
+    {
+      return grpc::Status(grpc::StatusCode::ABORTED, "Could not delete object");
+      //status = new grpc::Status::Status(grpc::StatusCode::ABORTED, "Could not delete object");
+    }
   }
   else
   {
-    return grpc::Status::CANCELLED;
+    return grpc::Status(grpc::StatusCode::NOT_FOUND, "No object with this ID in database");
+
   }
+return grpc::Status::OK;
+  
 }
 
 grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::PropaneSearch *request,
                                          propane::PropaneEntities *reply)
 {
-  return grpc::Status::CANCELLED; //not yet implemented
+  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "No yet implemented");
+
 }
 
 grpc::Status DatabaseServiceImpl::SetFileDescriptor(ServerContext *context, const propane::PropaneFileDescriptor *request,

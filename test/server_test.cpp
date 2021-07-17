@@ -6,35 +6,68 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
-
 #include <gtest/gtest.h>
 #include "test.pb.h"
 #include "DatabaseServiceImpl.h"
-//#include <unistd.h>
 #include <boost/filesystem.hpp>
 
 using namespace std;
 
-// Demonstrate some basic assertions.
-TEST(HelloTest, PutGet)
+class PropanedbTest : public ::testing::Test
+{
+protected:
+  // You can remove any or all of the following functions if their bodies would
+  // be empty.
+
+  PropanedbTest()
+  {
+    // You can do set-up work for each test here.
+  }
+
+  ~PropanedbTest() override
+  {
+    // You can do clean-up work that doesn't throw exceptions here.
+  }
+
+  // If the constructor and destructor are not enough for setting up
+  // and cleaning up each test, you can define the following methods:
+
+  void SetUp() override
+  {
+    // Code here will be called immediately after the constructor (right
+    // before each test).
+    std::string dir("/tmp/test1");
+    try
+    {
+      if (boost::filesystem::exists(dir))
+      {
+        boost::filesystem::remove_all(dir);
+      }
+    }
+    catch (boost::filesystem::filesystem_error const &e)
+    {
+      //display error message
+    }
+    //DatabaseServiceImpl service(dir);
+    service = new DatabaseServiceImpl(dir);
+  }
+
+  void TearDown() override
+  {
+    // Code here will be called immediately after each test (right
+    // before the destructor).
+    delete service;
+  }
+
+  // Class members declared here can be used by all tests in the test suite
+  // for Foo.
+   DatabaseServiceImpl* service;
+};
+
+TEST_F(PropanedbTest, PutGet)
 {
 
-  std::string dir("/tmp/test1");
-  try
-  {
-    if (boost::filesystem::exists(dir))
-    {
-      boost::filesystem::remove_all(dir);
-    }
-    //create_directory(directory_path);
-  }
-  catch (boost::filesystem::filesystem_error const &e)
-  {
-    //display error message
-  }
-
   std::string id;
-  DatabaseServiceImpl service(dir);
 
   test::TodoItem entity;
   string description("Test PropaneDB");
@@ -49,12 +82,12 @@ TEST(HelloTest, PutGet)
 
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    std::cout << "Descriptor: " << fd->DebugString() << std::endl;
+    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneFileDescriptor request;
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
-    grpc::Status s = service.SetFileDescriptor(&context, &request, &reply);
+    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
   }
 
   {
@@ -64,7 +97,7 @@ TEST(HelloTest, PutGet)
     request.set_allocated_data(anyMessage);
 
     propane::PropaneId reply;
-    grpc::Status s = service.Put(&context, &request, &reply);
+    grpc::Status s = service->Put(&context, &request, &reply);
 
     EXPECT_EQ(s.ok(), true);
     EXPECT_GT(reply.id().length(), 0);
@@ -76,10 +109,84 @@ TEST(HelloTest, PutGet)
     request.set_id(id);
 
     propane::PropaneEntity reply;
-    grpc::Status s = service.Get(&context, &request, &reply);
+    grpc::Status s = service->Get(&context, &request, &reply);
 
     EXPECT_EQ(s.ok(), true);
-     std::cout << "Get: any receive: " << reply.data().DebugString() << std::endl;
-   // EXPECT_GT(reply.id().length(), 0);
+    LOG(INFO) << "Get: any receive: " << reply.data().DebugString() << std::endl;
+    // EXPECT_GT(reply.id().length(), 0);
   }
+}
+
+TEST_F(PropanedbTest, PutDelete)
+{
+
+  std::string id;
+
+  test::TodoItem entity;
+  string description("Test PropaneDB");
+  entity.set_description(description);
+
+  grpc::ServerContext context;
+  {
+
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
+
+    google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+
+    propane::PropaneFileDescriptor request;
+    request.set_allocated_descriptor_set(fd);
+    propane::PropaneStatus reply;
+    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
+  }
+
+  {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(entity);
+    propane::PropaneEntity request;
+    request.set_allocated_data(anyMessage);
+
+    propane::PropaneId reply;
+    grpc::Status s = service->Put(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+//delete object by ID
+  {
+    propane::PropaneId request;
+    request.set_id(id);
+
+    propane::PropaneStatus reply;
+    grpc::Status s = service->Delete(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+  }
+
+//delete same object again: should give error
+  {
+    propane::PropaneId request;
+    request.set_id(id);
+
+    propane::PropaneStatus reply;
+    grpc::Status s = service->Delete(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), false);
+  }
+
+}
+
+
+
+int main(int argc, char **argv) {
+  FLAGS_logtostderr = 0;
+  FLAGS_log_dir = "./";
+  google::InitGoogleLogging(argv[0]);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

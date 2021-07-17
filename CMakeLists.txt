@@ -11,13 +11,9 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+
+
+find_package (glog 0.5.0 REQUIRED)
 
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
@@ -105,11 +101,12 @@ add_library(propane_lib
   )
   add_dependencies(propane_lib protoGenerate)
 target_link_libraries(propane_lib
-rocksdb 
-pthread 
-gRPC::grpc++_reflection
+  rocksdb 
+  pthread 
+  gRPC::grpc++_reflection
   gRPC::grpc++
-  ${Protobuf_LIBRARIES})
+  ${Protobuf_LIBRARIES} 
+  glog::glog)
 
 
 add_library(test_proto
@@ -132,12 +129,12 @@ ${Protobuf_LIBRARIES})
 enable_testing()
 
 add_executable(
-  unit_test
+  propane_test
   test/server_test.cpp
 )
-add_dependencies(unit_test propane_lib test_proto)
+add_dependencies(propane_test propane_lib test_proto)
 target_link_libraries(
-  unit_test
+  propane_test
   gtest_main
   rocksdb 
   pthread 
@@ -149,5 +146,5 @@ target_link_libraries(
   ${Protobuf_LIBRARIES})
 
 include(GoogleTest)
-gtest_discover_tests(unit_test)
+gtest_discover_tests(propane_test)
 
