@@ -47,6 +47,8 @@
 
 FROM jevon82/propanedb-base
 
+RUN apk add --update openjdk8-jre
+
 #build propaneDB
 WORKDIR /app 
 COPY CMakeLists.txt CMakeLists.txt 
