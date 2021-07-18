@@ -13,8 +13,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(glog_DIR "/app/dependencies/deploy/lib/cmake/glog")
-
 find_package (glog 0.5.0 REQUIRED)
+
+set(gflags_DIR "/app/dependencies/deploy/lib/cmake/gflags")
 
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
