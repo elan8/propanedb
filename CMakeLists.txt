@@ -16,15 +16,20 @@ set(gflags_DIR "/app/dependencies/deploy/lib/cmake/gflags")
 set(glog_DIR "/app/dependencies/deploy/lib/cmake/glog")
 find_package (glog 0.5.0 REQUIRED)
 
-
-
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake/rocksdb")
 
+list(APPEND CMAKE_PREFIX_PATH "/app/dependencies/deploy")
+list(APPEND CMAKE_PREFIX_PATH "/app/dependencies/deploy/lib/cmake")
+list(APPEND CMAKE_PREFIX_PATH "/app/dependencies/deploy/lib/cmake/rocksdb")
+
 include_directories("./dependencies/deploy/include")
+include_directories("/app/dependencies/deploy/include")
 link_directories("./dependencies/deploy/lib")
+link_directories("/app/dependencies/deploy/lib")
 LIST(APPEND CMAKE_PROGRAM_PATH "./dependencies/deploy/bin")
+LIST(APPEND CMAKE_PROGRAM_PATH "/app/dependencies/deploy/bin")
 
 find_package (Boost 1.76.0 REQUIRED COMPONENTS filesystem)
 if(Boost_FOUND)
