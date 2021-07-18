@@ -45,10 +45,7 @@
 # cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1 && \
 # make && make install
 
-FROM jevon82/propanedb-base as base
-
-# FROM mcr.microsoft.com/cstsectools/codeql-container
-# COPY --from=base /app /app
+FROM jevon82/propanedb-codeql
 
 #build propaneDB
 WORKDIR /app 

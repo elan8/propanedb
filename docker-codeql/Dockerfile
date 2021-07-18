@@ -8,7 +8,11 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_
     ./bootstrap.sh --prefix=../deploy/ && \
     ./b2  --with-filesystem --with-system install && cd /app/dependencies/ && rm -R boost_1_76_0 && rm boost_1_76_0.tar.bz2 
 
-RUN apt-get update -y && apt-get -y install cmake
+RUN apt-get update -y && apt-get -y install gpg wget && \
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null && \
+echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' |  tee /etc/apt/sources.list.d/kitware.list >/dev/null && \
+apt-get update -y && apt-get install cmake -y
+
 #build gflags
 WORKDIR /app/dependencies
 RUN git clone https://github.com/gflags/gflags.git && \
