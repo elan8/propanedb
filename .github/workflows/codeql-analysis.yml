@@ -57,7 +57,7 @@ jobs:
     # If this step fails, then you should remove it and run the build manually (see below)
     - name: Build
       run: |
-       mkdir build && cd build
+       cd app && mkdir build && cd build
        cmake ..
        make 
 
