@@ -12,16 +12,14 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-find_package (glog 0.5.0 REQUIRED)
-
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake/rocksdb")
-
 include_directories("./dependencies/deploy/include")
 link_directories("./dependencies/deploy/lib")
 LIST(APPEND CMAKE_PROGRAM_PATH "./dependencies/deploy/bin")
 
+find_package (glog 0.5.0 REQUIRED)
 find_package (Boost 1.76.0 REQUIRED COMPONENTS filesystem)
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
