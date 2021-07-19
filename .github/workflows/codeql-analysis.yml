@@ -57,7 +57,7 @@ jobs:
     # If this step fails, then you should remove it and run the build manually (see below)
     - name: Build
       run: |
-       cp /app/dependencies ./dependencies
+       cp -r /app/dependencies ./dependencies
        mkdir build && cd build
        cmake ..
        make 
