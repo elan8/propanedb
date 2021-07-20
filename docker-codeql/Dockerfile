@@ -56,3 +56,14 @@ make && \
 make install
 
 ENV LD_LIBRARY_PATH="/usr/lib:${LD_LIBRARY_PATH}"
+
+#build PEGTL
+WORKDIR /app/dependencies
+RUN wget https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz && \
+tar -xzf 3.2.0.tar.gz && \
+cd PEGTL-3.2.0 && \
+mkdir build && \
+cd build && \
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
+make && \
+make install && \

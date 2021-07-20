@@ -47,6 +47,8 @@ message(STATUS "gRPC libraries ${gRPC_LIBRARIES}")
 find_package(RocksDB REQUIRED )
 set(_GRPC_GRPCPP_UNSECURE gRPC::grpc++_unsecure)
 
+find_package(pegtl)
+
 get_filename_component(hw_proto "./protos/propanedb.proto" ABSOLUTE)
 get_filename_component(test_proto "./protos/test.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
@@ -103,7 +105,9 @@ target_link_libraries(propane_lib
   gRPC::grpc++_reflection
   gRPC::grpc++
   ${Protobuf_LIBRARIES} 
-  glog::glog)
+  glog::glog
+  taocpp::pegtl
+  )
 
 
 add_library(test_proto

@@ -51,3 +51,15 @@ mkdir build && cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release && \
 make && \
 make install
+
+
+#build PEGTL
+WORKDIR /app/dependencies
+RUN wget https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz && \
+tar -xzf 3.2.0.tar.gz && \
+cd PEGTL-3.2.0 && \
+mkdir build && \
+cd build && \
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
+make && \
+make install && \
