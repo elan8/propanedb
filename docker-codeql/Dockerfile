@@ -54,3 +54,5 @@ mkdir build && cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release && \
 make && \
 make install
+
+ENV LD_LIBRARY_PATH="/usr/lib:${LD_LIBRARY_PATH}"
