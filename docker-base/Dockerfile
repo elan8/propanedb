@@ -62,4 +62,4 @@ mkdir build && \
 cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
 make && \
-make install && \
+make install 
