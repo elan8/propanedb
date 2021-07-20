@@ -58,7 +58,7 @@ jobs:
     - name: Prepare
       run: |
        cp -r /app/dependencies ./dependencies
-       cp -r /app/dependencies/deploy/lib /usr/lib
+       cp -r /app/dependencies/deploy/lib/* /usr/lib
        ls -la /usr/lib
 
     - name: Build
