@@ -27,6 +27,6 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Build Docker container image
-        run: ./buildDocker.sh
+        run: ./buildDockerMain.sh
 
    
