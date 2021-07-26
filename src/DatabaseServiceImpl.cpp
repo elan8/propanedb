@@ -3,6 +3,7 @@
 DatabaseServiceImpl::DatabaseServiceImpl(string path)
 {
 
+  //google::InitGoogleLogging("");
   Options options;
   // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
   options.IncreaseParallelism();
@@ -14,6 +15,7 @@ DatabaseServiceImpl::DatabaseServiceImpl(string path)
   assert(s.ok());
 
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+  pool = new google::protobuf::DescriptorPool(descriptorDB);
 }
 
 DatabaseServiceImpl::~DatabaseServiceImpl()
@@ -27,8 +29,6 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::PropaneEntity *request,
                                       propane::PropaneId *reply)
 {
-  google::protobuf::DynamicMessageFactory dmf;
-  const google::protobuf::DescriptorPool *pool = new google::protobuf::DescriptorPool(descriptorDB);
 
   Any any = request->data();
   string typeUrl = any.type_url();
@@ -67,7 +67,7 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
 
- return grpc::Status::OK;
+  return grpc::Status::OK;
 }
 
 grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::PropaneId *request,
@@ -102,27 +102,56 @@ grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::
   else
   {
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "No object with this ID in database");
-
   }
-return grpc::Status::OK;
-  
+  return grpc::Status::OK;
 }
 
 grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::PropaneSearch *request,
                                          propane::PropaneEntities *reply)
 {
-  return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "No yet implemented");
+  reply = new propane::PropaneEntities();
+  //string serializedAny;
+  ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+  for (it->Seek(""); it->Valid(); it->Next())
+  {
+    LOG(INFO) << "Search: key=: " << it->key().ToString() << std::endl;
 
+    google::protobuf::Any *any = new Any();
+    any->ParseFromString(it->value().ToString());
+    string typeUrl = any->type_url();
+    LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
+    string typeName = Util::getTypeName(typeUrl);
+    LOG(INFO) << "Any TypeName=" << typeName << endl;
+    // cout << "Descriptor pool=" << descriptorDB-> << endl;
+    const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
+    if (descriptor != nullptr)
+    {
+      LOG(INFO) << "Unpack to message " << endl;
+      google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
+      any->UnpackTo(message);
+      LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
+      //any->type_url
+      // Do something with it->key() and it->value().
+    }
+  }
+
+  //reply->set_allocated_data(any);
+  return grpc::Status::OK;
+
+  //return grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "No yet implemented");
 }
 
 grpc::Status DatabaseServiceImpl::SetFileDescriptor(ServerContext *context, const propane::PropaneFileDescriptor *request,
                                                     propane::PropaneStatus *reply)
 {
   google::protobuf::FileDescriptorSet fds = request->descriptor_set();
+  descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+
   auto file = fds.file();
   for (auto it = file.begin(); it != file.end(); ++it)
   {
     descriptorDB->Add((*it));
   }
+  pool = new google::protobuf::DescriptorPool(descriptorDB);
   return grpc::Status::OK;
 }

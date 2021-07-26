@@ -42,6 +42,6 @@ message PropaneId{
 
 message PropaneSearch {
   string entityType = 1;
-  string searchParameters = 2;
+  string query = 2;
   
 }

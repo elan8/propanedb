@@ -117,6 +117,82 @@ TEST_F(PropanedbTest, PutGet)
   }
 }
 
+TEST_F(PropanedbTest, PutSearch)
+{
+
+  std::string id;
+
+  test::TodoItem entity1;
+  string description1("Item1");
+  entity1.set_description(description1);
+  entity1.set_isdone(false);
+
+  test::TodoItem entity2;
+  string description2("Item2");
+  entity2.set_description(description2);
+  entity2.set_isdone(true);
+  
+
+  grpc::ServerContext context;
+  {
+
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
+
+    google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+
+    propane::PropaneFileDescriptor request;
+    request.set_allocated_descriptor_set(fd);
+    propane::PropaneStatus reply;
+    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
+  }
+
+  {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(entity1);
+    propane::PropaneEntity request;
+    request.set_allocated_data(anyMessage);
+
+    propane::PropaneId reply;
+    grpc::Status s = service->Put(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+    {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(entity2);
+    propane::PropaneEntity request;
+    request.set_allocated_data(anyMessage);
+
+    propane::PropaneId reply;
+    grpc::Status s = service->Put(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+  {
+    propane::PropaneSearch request;
+    request.set_query("isdone==true");
+    request.set_entitytype("TodoItem");
+
+    propane::PropaneEntities reply;
+    grpc::Status s = service->Search(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    //EXPECT_GT(reply.entities_size(), 1);
+    //LOG(INFO) << "Reply: " << reply.DebugString() << std::endl;
+    
+  }
+}
+
 TEST_F(PropanedbTest, PutDelete)
 {
 
@@ -184,8 +260,8 @@ TEST_F(PropanedbTest, PutDelete)
 
 
 int main(int argc, char **argv) {
-  FLAGS_logtostderr = 0;
-  FLAGS_log_dir = "./";
+   FLAGS_logtostderr = 1;
+  //FLAGS_log_dir = "./";
   google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -33,7 +33,8 @@ class DatabaseServiceImpl final : public Database::Service
 private:
     DB *db;
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
-    //grpc::Status* status;
+    const google::protobuf::DescriptorPool *pool ;
+    google::protobuf::DynamicMessageFactory dmf;
 
 public:
     DatabaseServiceImpl(string path);
