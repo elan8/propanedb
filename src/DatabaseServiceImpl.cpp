@@ -109,7 +109,7 @@ grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::
 grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::PropaneSearch *request,
                                          propane::PropaneEntities *reply)
 {
-  reply = new propane::PropaneEntities();
+  //reply = new propane::PropaneEntities();
   //string serializedAny;
   ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
   for (it->Seek(""); it->Valid(); it->Next())
@@ -123,15 +123,23 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
     string typeName = Util::getTypeName(typeUrl);
     LOG(INFO) << "Any TypeName=" << typeName << endl;
     // cout << "Descriptor pool=" << descriptorDB-> << endl;
-    const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
-    if (descriptor != nullptr)
+    if (IsCorrectEntityType(any, request->entitytype()))
     {
-      LOG(INFO) << "Unpack to message " << endl;
-      google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
-      any->UnpackTo(message);
-      LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
-      //any->type_url
-      // Do something with it->key() and it->value().
+      const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
+      if (descriptor != nullptr)
+      {
+        LOG(INFO) << "Unpack to message " << endl;
+        google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
+        any->UnpackTo(message);
+        LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
+        //any->type_url
+        // Do something with it->key() and it->value().
+        //propane::PropaneEntity* entity= new propane::PropaneEntity();
+
+        propane::PropaneEntity *entity = reply->add_entities();
+        entity->set_allocated_data(any);
+        cout << "Search:: Add entity" << endl;
+      }
     }
   }
 
@@ -154,4 +162,18 @@ grpc::Status DatabaseServiceImpl::SetFileDescriptor(ServerContext *context, cons
   }
   pool = new google::protobuf::DescriptorPool(descriptorDB);
   return grpc::Status::OK;
+}
+
+bool DatabaseServiceImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string entityType)
+{
+  bool output = false;
+  string typeUrl = any->type_url();
+  //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
+  string typeName = Util::getTypeName(typeUrl);
+  //LOG(INFO) << "Any TypeName=" << typeName << endl;
+  if (entityType.compare(typeName) == 0)
+  {
+    output = true;
+  }
+  return output;
 }

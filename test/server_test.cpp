@@ -181,13 +181,13 @@ TEST_F(PropanedbTest, PutSearch)
   {
     propane::PropaneSearch request;
     request.set_query("isdone==true");
-    request.set_entitytype("TodoItem");
+    request.set_entitytype("test.TodoItem");
 
     propane::PropaneEntities reply;
     grpc::Status s = service->Search(&context, &request, &reply);
-
+    //cout << "Reply =" <<reply.entities_size();
     EXPECT_EQ(s.ok(), true);
-    //EXPECT_GT(reply.entities_size(), 1);
+    EXPECT_EQ(reply.entities_size(), 1);
     //LOG(INFO) << "Reply: " << reply.DebugString() << std::endl;
     
   }
@@ -260,7 +260,8 @@ TEST_F(PropanedbTest, PutDelete)
 
 
 int main(int argc, char **argv) {
-   FLAGS_logtostderr = 1;
+   FLAGS_logtostderr = 0;
+  // FLAGS_logtostderr = 1;
   //FLAGS_log_dir = "./";
   google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);

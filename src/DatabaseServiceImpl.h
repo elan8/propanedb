@@ -35,6 +35,7 @@ private:
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
     const google::protobuf::DescriptorPool *pool ;
     google::protobuf::DynamicMessageFactory dmf;
+    static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
 
 public:
     DatabaseServiceImpl(string path);
