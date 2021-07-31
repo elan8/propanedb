@@ -58,4 +58,4 @@ RUN mkdir build
 WORKDIR /app/build 
 RUN cmake .. 
 RUN make -j 2
-RUN ./propane_test
+#RUN ./propane_test
