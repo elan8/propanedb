@@ -25,15 +25,10 @@ std::string kDBPath = "C:\\Windows\\TEMP\\rocksdb_simple_example";
 std::string kDBPath = "/tmp/rocksdb_simple_example";
 #endif
 
-
-
 void RunServer()
 {
- 
   std::string server_address("0.0.0.0:50051");
-
   DatabaseServiceImpl service(kDBPath);
-
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
@@ -41,7 +36,6 @@ void RunServer()
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
-
   server->Wait();
 }
 
@@ -49,6 +43,5 @@ int main(int argc, char **argv)
 {
   google::InitGoogleLogging(argv[0]);
   RunServer();
-
   return 0;
 }

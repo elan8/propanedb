@@ -61,12 +61,11 @@ protected:
 
   // Class members declared here can be used by all tests in the test suite
   // for Foo.
-   DatabaseServiceImpl* service;
+  DatabaseServiceImpl *service;
 };
 
 TEST_F(PropanedbTest, PutGet)
 {
-
   std::string id;
 
   test::TodoItem entity;
@@ -75,7 +74,6 @@ TEST_F(PropanedbTest, PutGet)
 
   grpc::ServerContext context;
   {
-
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),
                            std::istreambuf_iterator<char>());
@@ -119,9 +117,7 @@ TEST_F(PropanedbTest, PutGet)
 
 TEST_F(PropanedbTest, PutSearch)
 {
-
   std::string id;
-
   test::TodoItem entity1;
   string description1("Item1");
   entity1.set_description(description1);
@@ -131,15 +127,12 @@ TEST_F(PropanedbTest, PutSearch)
   string description2("Item2");
   entity2.set_description(description2);
   entity2.set_isdone(true);
-  
 
   grpc::ServerContext context;
   {
-
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),
                            std::istreambuf_iterator<char>());
-
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
     LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
@@ -164,7 +157,7 @@ TEST_F(PropanedbTest, PutSearch)
     id = reply.id();
   }
 
-    {
+  {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity2);
     propane::PropaneEntity request;
@@ -188,14 +181,11 @@ TEST_F(PropanedbTest, PutSearch)
     //cout << "Reply =" <<reply.entities_size();
     EXPECT_EQ(s.ok(), true);
     EXPECT_EQ(reply.entities_size(), 1);
-    //LOG(INFO) << "Reply: " << reply.DebugString() << std::endl;
-    
   }
 }
 
 TEST_F(PropanedbTest, PutDelete)
 {
-
   std::string id;
 
   test::TodoItem entity;
@@ -204,7 +194,6 @@ TEST_F(PropanedbTest, PutDelete)
 
   grpc::ServerContext context;
   {
-
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),
                            std::istreambuf_iterator<char>());
@@ -233,7 +222,7 @@ TEST_F(PropanedbTest, PutDelete)
     id = reply.id();
   }
 
-//delete object by ID
+  //delete object by ID
   {
     propane::PropaneId request;
     request.set_id(id);
@@ -244,7 +233,7 @@ TEST_F(PropanedbTest, PutDelete)
     EXPECT_EQ(s.ok(), true);
   }
 
-//delete same object again: should give error
+  //delete same object again: should give error
   {
     propane::PropaneId request;
     request.set_id(id);
@@ -254,13 +243,11 @@ TEST_F(PropanedbTest, PutDelete)
 
     EXPECT_EQ(s.ok(), false);
   }
-
 }
 
-
-
-int main(int argc, char **argv) {
-   FLAGS_logtostderr = 0;
+int main(int argc, char **argv)
+{
+  FLAGS_logtostderr = 0;
   // FLAGS_logtostderr = 1;
   //FLAGS_log_dir = "./";
   google::InitGoogleLogging(argv[0]);

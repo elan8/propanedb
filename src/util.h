@@ -8,10 +8,6 @@
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 
-// int main() {
-
-// }
-
 class Util
 {
 public:
