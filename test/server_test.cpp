@@ -173,7 +173,7 @@ TEST_F(PropanedbTest, PutSearch)
 
   {
     propane::PropaneSearch request;
-    request.set_query("isdone==true");
+    request.set_query("isDone==true");
     request.set_entitytype("test.TodoItem");
 
     propane::PropaneEntities reply;
@@ -247,7 +247,7 @@ TEST_F(PropanedbTest, PutDelete)
 
 int main(int argc, char **argv)
 {
-  FLAGS_logtostderr = 0;
+  FLAGS_logtostderr = 1;
   // FLAGS_logtostderr = 1;
   //FLAGS_log_dir = "./";
   google::InitGoogleLogging(argv[0]);

@@ -16,6 +16,7 @@ DatabaseServiceImpl::DatabaseServiceImpl(string path)
 
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
+  queryParser = new QueryParser();
 }
 
 DatabaseServiceImpl::~DatabaseServiceImpl()
@@ -103,6 +104,15 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
                                          propane::PropaneEntities *reply)
 {
   ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+
+  Query query = queryParser->parseQuery(request->query());
+  if (query.hasError())
+  {
+    LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
+  }
+
+  propane::PropaneEntity *entity = reply->add_entities();
+
   for (it->Seek(""); it->Valid(); it->Next())
   {
     LOG(INFO) << "Search: key=: " << it->key().ToString() << std::endl;
@@ -118,13 +128,17 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
       const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
       if (descriptor != nullptr)
       {
+
         LOG(INFO) << "Unpack to message " << endl;
         google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
         any->UnpackTo(message);
         LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
-        propane::PropaneEntity *entity = reply->add_entities();
-        entity->set_allocated_data(any);
-        cout << "Search:: Add entity" << endl;
+
+        if (query.isMatch(message))
+        {
+          entity->set_allocated_data(any);
+          cout << "Search:: Add entity" << endl;
+        }
       }
     }
   }

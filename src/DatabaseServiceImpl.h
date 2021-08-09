@@ -16,6 +16,7 @@
 #include "util.h"
 #include <glog/logging.h>
 
+#include "QueryParser.h"
 
 using google::protobuf::Any;
 using grpc::Server;
@@ -35,6 +36,8 @@ private:
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
     const google::protobuf::DescriptorPool *pool ;
     google::protobuf::DynamicMessageFactory dmf;
+    QueryParser* queryParser;
+
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
 
 public:
