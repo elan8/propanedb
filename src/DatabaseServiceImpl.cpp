@@ -111,7 +111,13 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
     LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
   }
 
-  propane::PropaneEntity *entity = reply->add_entities();
+ reply->clear_entities();
+
+  google::protobuf::RepeatedPtrField< ::propane::PropaneEntity >* entities =  reply->mutable_entities();
+
+  //LOG(ERROR) << "Entity =: " << entity->DebugString() << std::endl;
+  
+  LOG(ERROR) << "Entities length =: " << reply->entities_size() << std::endl;
 
   for (it->Seek(""); it->Valid(); it->Next())
   {
@@ -136,6 +142,7 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
 
         if (query.isMatch(message))
         {
+          propane::PropaneEntity* entity = entities->Add();
           entity->set_allocated_data(any);
           cout << "Search:: Add entity" << endl;
         }

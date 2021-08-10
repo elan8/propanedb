@@ -25,5 +25,5 @@ std::string Query::getErrorMessage()
 bool Query::isMatch(google::protobuf::Message* message)
 {
      // LOG(INFO) << "isMatch:" <<  << endl;
-    return false;
+    return true;
 }
