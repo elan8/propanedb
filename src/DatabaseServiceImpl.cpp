@@ -140,7 +140,7 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
         any->UnpackTo(message);
         LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
 
-        if (query.isMatch(message))
+        if (query.isMatch(descriptor,message))
         {
           propane::PropaneEntity* entity = entities->Add();
           entity->set_allocated_data(any);

@@ -2,14 +2,14 @@
 
 Query::Query()
 {
-    error=false;
-    errorMessage="";
+    error = false;
+    errorMessage = "";
 }
 
-void Query::setError(std::string message) 
+void Query::setError(std::string message)
 {
-    error=true;
-    errorMessage=message;
+    error = true;
+    errorMessage = message;
 }
 
 bool Query::hasError()
@@ -22,8 +22,41 @@ std::string Query::getErrorMessage()
     return errorMessage;
 }
 
-bool Query::isMatch(google::protobuf::Message* message)
+bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message)
 {
-     // LOG(INFO) << "isMatch:" <<  << endl;
-    return true;
+    bool output = false;
+    std::string fieldName = "isDone";
+
+    const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(fieldName);
+    const google::protobuf::Reflection *reflection = message->GetReflection();
+
+    //google::protobuf::FieldDescriptor::CPPTYPE_BOOL
+
+    google::protobuf::FieldDescriptor::CppType type = fd->cpp_type();
+
+    switch (type)
+    {
+    case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
+    {
+        bool value = reflection->GetBool(*message, fd);
+        if (value == true)
+        {
+            output = true;
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+    // if (fd->default_value_bool()){
+    //     bool value = reflection->GetBool(*message, fd);
+    //     if (value==true){
+    //         output=true;
+    //     }
+    // }
+    //string id = reflection->GetString(*message, fd);
+
+    // LOG(INFO) << "isMatch:" <<  << endl;
+    return output;
 }

@@ -12,5 +12,5 @@ public:
     bool hasError();
     void setError(std::string message);
     std::string getErrorMessage();
-    bool isMatch(google::protobuf::Message *message);
+    bool isMatch(const google::protobuf::Descriptor *descriptor ,google::protobuf::Message *message);
 };
