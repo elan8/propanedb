@@ -30,9 +30,94 @@ namespace application
     {
     };
 
-    struct grammar : seq<fieldname, op, value, eof>
+     struct expression : seq<fieldname, op, value, eof>
     {
     };
+
+    struct grammar : seq<expression, eof>
+    {
+    };
+
+    // Primary action class template.
+    template <typename Rule>
+    struct my_action
+        : tao::pegtl::nothing<Rule>
+    {
+    };
+
+            template <>
+    struct my_action<application::expression>
+    {
+        // Implement an apply() function that will be called by
+        // the PEGTL every time tao::pegtl::any matches during
+        // the parsing run.
+        template <typename ActionInput>
+        static void apply(const ActionInput &in, Query &out)
+        {
+            LOG(INFO) << "Action = expression" << std::endl;
+            // Get the portion of the original input that the
+            // rule matched this time as string and append it
+            // to the result string.
+            //out += in.string();
+            //out.fieldName = in.string();
+        }
+    };
+
+        template <>
+    struct my_action<application::grammar>
+    {
+        // Implement an apply() function that will be called by
+        // the PEGTL every time tao::pegtl::any matches during
+        // the parsing run.
+        template <typename ActionInput>
+        static void apply(const ActionInput &in, Query &out)
+        {
+            LOG(INFO) << "Action = grammar" << std::endl;
+            // Get the portion of the original input that the
+            // rule matched this time as string and append it
+            // to the result string.
+            //out += in.string();
+            //out.fieldName = in.string();
+        }
+    };
+
+    // Specialise the action class template.
+    template <>
+    struct my_action<application::fieldname>
+    {
+        // Implement an apply() function that will be called by
+        // the PEGTL every time tao::pegtl::any matches during
+        // the parsing run.
+        template <typename ActionInput>
+        static void apply(const ActionInput &in, Query &out)
+        {
+            LOG(INFO) << "Action = fieldname" << std::endl;
+            // Get the portion of the original input that the
+            // rule matched this time as string and append it
+            // to the result string.
+            //out += in.string();
+            out.fieldName = in.string();
+        }
+    };
+
+    template <>
+    struct my_action<application::value>
+    {
+        // Implement an apply() function that will be called by
+        // the PEGTL every time tao::pegtl::any matches during
+        // the parsing run.
+        template <typename ActionInput>
+        static void apply(const ActionInput &in, Query &out)
+        {
+              LOG(INFO) << "Action = value" << std::endl;
+            // Get the portion of the original input that the
+            // rule matched this time as string and append it
+            // to the result string.
+            //out += in.string();
+            out.fieldValue = in.string();
+        }
+    };
+
 }
 // struct comment
 //     : seq<one<'#'>, until<eolf>>
@@ -60,7 +145,12 @@ Query QueryParser::parseQuery(std::string queryString)
     LOG(INFO) << "parseQuery: " << queryString << std::endl;
 
     memory_input in1(queryString, "");
-    tao::pegtl::standard_trace<application::grammar>(in1);
+    //tao::pegtl::standard_trace<application::grammar>(in1);
+    //in1.restart()
+    tao::pegtl::parse<application::grammar, application::my_action>(in1, query);
+
+    LOG(INFO) << "Query fieldName= " << query.fieldName << std::endl;
+    LOG(INFO) << "Query fieldValue= " << query.fieldValue << std::endl;
 
     return query;
 }

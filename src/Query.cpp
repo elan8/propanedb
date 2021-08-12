@@ -4,6 +4,8 @@ Query::Query()
 {
     error = false;
     errorMessage = "";
+    fieldName = "";
+    fieldValue = "";
 }
 
 void Query::setError(std::string message)
@@ -25,12 +27,10 @@ std::string Query::getErrorMessage()
 bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message)
 {
     bool output = false;
-    std::string fieldName = "isDone";
+    //std::string fieldName = this->fieldName;
 
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(fieldName);
     const google::protobuf::Reflection *reflection = message->GetReflection();
-
-    //google::protobuf::FieldDescriptor::CPPTYPE_BOOL
 
     google::protobuf::FieldDescriptor::CppType type = fd->cpp_type();
 
