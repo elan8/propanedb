@@ -131,6 +131,7 @@ TEST_F(PropanedbTest, PutSearch)
   entity2.set_isdone(true);
 
   grpc::ServerContext context;
+  context.AddInitialMetadata("database","test");
   {
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),
@@ -195,6 +196,7 @@ TEST_F(PropanedbTest, PutDelete)
   entity.set_description(description);
 
   grpc::ServerContext context;
+  context.AddInitialMetadata("database","test");
   {
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),

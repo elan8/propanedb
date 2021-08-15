@@ -43,6 +43,7 @@ private:
 
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
     rocksdb::DB* GetDatabase(string name);
+    string GetDatabaseNameFromContext(grpc::ServerContext* context);
 
 public:
     DatabaseServiceImpl(string path);

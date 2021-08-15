@@ -5,7 +5,7 @@ namespace fs = std::filesystem;
 
 DatabaseServiceImpl::DatabaseServiceImpl(string path)
 {
-  directory=path;
+  directory = path;
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
   queryParser = new QueryParser();
@@ -13,22 +13,17 @@ DatabaseServiceImpl::DatabaseServiceImpl(string path)
 
 DatabaseServiceImpl::~DatabaseServiceImpl()
 {
-  //db->Close();
-
- for (auto it = databases.begin(); it != databases.end(); ++it) {
-    //std::cout << it->first << ", " << it->second << '\n';
-    DB* db = it->second;
+  for (auto it = databases.begin(); it != databases.end(); ++it)
+  {
+    DB *db = it->second;
     db->Close();
-
   }
 
   delete descriptorDB;
-  //delete db;
 }
 
-rocksdb::DB* DatabaseServiceImpl::GetDatabase(string name)
+rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
 {
-
   fs::path p1;
   p1 += directory;
   p1 /= name;
@@ -38,21 +33,17 @@ rocksdb::DB* DatabaseServiceImpl::GetDatabase(string name)
   DB *db = databases[name];
   if (db == nullptr)
   {
-      LOG(INFO) << "Database pointer = null: opening database" << endl;
-    //rocksdb::DB* db;
-    //google::InitGoogleLogging("");
+    LOG(INFO) << "Database pointer = null: opening database" << endl;
     Options options;
-    // Optimize RocksDB. This is the easiest way to get RocksDB to perform well
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
-    // create the DB if it's not already present
     options.create_if_missing = true;
     // open DB
-    ROCKSDB_NAMESPACE::Status s = DB::Open(options, path , &db);
+    ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
     LOG(INFO) << "Status code="s << s.code() << endl;
-    
+
     assert(s.ok());
-    databases[name]=db;
+    databases[name] = db;
   }
 
   return db;
@@ -61,7 +52,7 @@ rocksdb::DB* DatabaseServiceImpl::GetDatabase(string name)
 grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::PropaneEntity *request,
                                       propane::PropaneId *reply)
 {
-  string name = "test";
+   string name = GetDatabaseNameFromContext(context);
 
   Any any = request->data();
   string typeUrl = any.type_url();
@@ -89,7 +80,6 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
     string serializedAny;
     any.SerializeToString(&serializedAny);
 
-
     ROCKSDB_NAMESPACE::Status s = GetDatabase(name)->Put(WriteOptions(), id, serializedAny);
     assert(s.ok());
     reply->set_id(id);
@@ -104,7 +94,8 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
 grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::PropaneId *request,
                                       propane::PropaneEntity *reply)
 {
-  string name = "test";
+  string name = GetDatabaseNameFromContext(context);
+
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s = GetDatabase(name)->Get(ReadOptions(), request->id(), &serializedAny);
   google::protobuf::Any *any = new Any();
@@ -116,8 +107,7 @@ grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::Pro
 grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::PropaneId *request,
                                          propane::PropaneStatus *reply)
 {
-  string name = "test";
-  //throw an error if no object with this key exists
+  string name = GetDatabaseNameFromContext(context);
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s = GetDatabase(name)->Get(ReadOptions(), request->id(), &serializedAny);
   if (s.ok())
@@ -140,7 +130,7 @@ grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::
 grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::PropaneSearch *request,
                                          propane::PropaneEntities *reply)
 {
-  string name = "test";
+  string name = GetDatabaseNameFromContext(context);
   ROCKSDB_NAMESPACE::Iterator *it = GetDatabase(name)->NewIterator(ReadOptions());
 
   Query query = queryParser->parseQuery(request->query());
@@ -209,12 +199,24 @@ bool DatabaseServiceImpl::IsCorrectEntityType(google::protobuf::Any *any, std::s
 {
   bool output = false;
   string typeUrl = any->type_url();
-  //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
-  //LOG(INFO) << "Any TypeName=" << typeName << endl;
   if (entityType.compare(typeName) == 0)
   {
     output = true;
   }
   return output;
+}
+
+string DatabaseServiceImpl::GetDatabaseNameFromContext(grpc::ServerContext* context){
+  string name = "";
+  auto map = context->client_metadata();
+  auto search = map.find("database");
+
+  if (search != map.end())
+  {
+    name = search->second.data() ;
+  }
+
+
+  return name;
 }
