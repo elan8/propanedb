@@ -39,7 +39,23 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
     {
         bool value = reflection->GetBool(*message, fd);
-        if (value == true)
+
+        bool desiredValue=false;
+        if (fieldValue.find("true")){
+            desiredValue=true;
+        }
+
+        if (value == desiredValue)
+        {
+            output = true;
+        }
+        break;
+    }
+
+        case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
+    {
+        std::string value = reflection->GetString(*message, fd);
+        if (value.compare(fieldValue)==0)
         {
             output = true;
         }

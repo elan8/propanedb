@@ -40,7 +40,7 @@ rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
     options.create_if_missing = true;
     // open DB
     ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-    LOG(INFO) << "Status code="s << s.code() << endl;
+    //LOG(INFO) << "Status code="s << s.code() << endl;
 
     assert(s.ok());
     databases[name] = db;
@@ -56,17 +56,17 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
 
   Any any = request->data();
   string typeUrl = any.type_url();
-  LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
+  //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
-  LOG(INFO) << "Any TypeName=" << typeName << endl;
+  //LOG(INFO) << "Any TypeName=" << typeName << endl;
   // cout << "Descriptor pool=" << descriptorDB-> << endl;
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor != nullptr)
   {
-    LOG(INFO) << "Descriptor=" << descriptor->DebugString() << endl;
+    //LOG(INFO) << "Descriptor=" << descriptor->DebugString() << endl;
     google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
     any.UnpackTo(message);
-    LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
+    //LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
 
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
     const google::protobuf::Reflection *reflection = message->GetReflection();
@@ -145,17 +145,17 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
 
   //LOG(ERROR) << "Entity =: " << entity->DebugString() << std::endl;
 
-  LOG(ERROR) << "Entities length =: " << reply->entities_size() << std::endl;
+  //LOG(ERROR) << "Entities length =: " << reply->entities_size() << std::endl;
 
   for (it->Seek(""); it->Valid(); it->Next())
   {
-    LOG(INFO) << "Search: key=: " << it->key().ToString() << std::endl;
+    //LOG(INFO) << "Search: key=: " << it->key().ToString() << std::endl;
     google::protobuf::Any *any = new Any();
     any->ParseFromString(it->value().ToString());
     string typeUrl = any->type_url();
-    LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
+    //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
     string typeName = Util::getTypeName(typeUrl);
-    LOG(INFO) << "Any TypeName=" << typeName << endl;
+    //LOG(INFO) << "Any TypeName=" << typeName << endl;
     // cout << "Descriptor pool=" << descriptorDB-> << endl;
     if (IsCorrectEntityType(any, request->entitytype()))
     {
@@ -163,16 +163,16 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
       if (descriptor != nullptr)
       {
 
-        LOG(INFO) << "Unpack to message " << endl;
+        //LOG(INFO) << "Unpack to message " << endl;
         google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
         any->UnpackTo(message);
-        LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
+        //LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
 
         if (query.isMatch(descriptor, message))
         {
           propane::PropaneEntity *entity = entities->Add();
           entity->set_allocated_data(any);
-          cout << "Search:: Add entity" << endl;
+         LOG(INFO) << "Search:: Add entity" << endl;
         }
       }
     }

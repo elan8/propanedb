@@ -82,7 +82,7 @@ TEST_F(PropanedbTest, PutGet)
 
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+    //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
@@ -138,7 +138,7 @@ TEST_F(PropanedbTest, PutSearch)
                            std::istreambuf_iterator<char>());
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+    //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
@@ -185,6 +185,19 @@ TEST_F(PropanedbTest, PutSearch)
     EXPECT_EQ(s.ok(), true);
     EXPECT_EQ(reply.entities_size(), 1);
   }
+
+  {
+    propane::PropaneSearch request;
+    request.set_query("description==Item1");
+    request.set_entitytype("test.TodoItem");
+
+    propane::PropaneEntities reply;
+    grpc::Status s = service->Search(&context, &request, &reply);
+    //cout << "Reply =" <<reply.entities_size();
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(reply.entities_size(), 1);
+  }
+
 }
 
 TEST_F(PropanedbTest, PutDelete)
@@ -204,7 +217,7 @@ TEST_F(PropanedbTest, PutDelete)
 
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+    //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
