@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <map>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -32,13 +33,16 @@ using namespace std;
 class DatabaseServiceImpl final : public Database::Service
 {
 private:
-    DB *db;
+    //DB *db;
+    string directory;
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
     const google::protobuf::DescriptorPool *pool ;
     google::protobuf::DynamicMessageFactory dmf;
     QueryParser* queryParser;
+    map<string, rocksdb::DB*> databases;
 
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
+    rocksdb::DB* GetDatabase(string name);
 
 public:
     DatabaseServiceImpl(string path);
@@ -51,6 +55,6 @@ public:
                         propane::PropaneStatus *reply) override;
     grpc::Status Search(ServerContext *context, const propane::PropaneSearch *request,
                         propane::PropaneEntities *reply) override;
-    grpc::Status SetFileDescriptor(ServerContext *context, const propane::PropaneFileDescriptor *request,
+    grpc::Status CreateDatabase(ServerContext *context, const propane::PropaneDatabase* request,
                                    propane::PropaneStatus *reply) override;
 };

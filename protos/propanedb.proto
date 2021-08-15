@@ -13,15 +13,16 @@ option objc_class_prefix = "Prop";
 package propane;
 
 service Database {
-  rpc SetFileDescriptor(PropaneFileDescriptor) returns (PropaneStatus) {} 
+  rpc CreateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
   rpc Put (PropaneEntity) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
   rpc Delete (PropaneId) returns (PropaneStatus) {}
   rpc Search (PropaneSearch) returns (PropaneEntities) {}
 }
 
-message PropaneFileDescriptor {
-  google.protobuf.FileDescriptorSet descriptor_set = 1;
+message PropaneDatabase{
+  string name = 1;
+  google.protobuf.FileDescriptorSet descriptor_set = 2;
 }
 
 message PropaneEntities {

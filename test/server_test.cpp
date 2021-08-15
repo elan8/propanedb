@@ -43,6 +43,7 @@ protected:
       {
         boost::filesystem::remove_all(dir);
       }
+      boost::filesystem::create_directory(dir);
     }
     catch (boost::filesystem::filesystem_error const &e)
     {
@@ -73,6 +74,7 @@ TEST_F(PropanedbTest, PutGet)
   entity.set_description(description);
 
   grpc::ServerContext context;
+  context.AddInitialMetadata("database","test");
   {
     std::ifstream t("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(t)),
@@ -82,10 +84,10 @@ TEST_F(PropanedbTest, PutGet)
     fd->ParseFromString(descriptor);
     LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
-    propane::PropaneFileDescriptor request;
+    propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
-    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
+    grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
@@ -137,10 +139,10 @@ TEST_F(PropanedbTest, PutSearch)
     fd->ParseFromString(descriptor);
     LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
-    propane::PropaneFileDescriptor request;
+    propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
-    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
+    grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
@@ -202,10 +204,10 @@ TEST_F(PropanedbTest, PutDelete)
     fd->ParseFromString(descriptor);
     LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
-    propane::PropaneFileDescriptor request;
+    propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
-    grpc::Status s = service->SetFileDescriptor(&context, &request, &reply);
+    grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
