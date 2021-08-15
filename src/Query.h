@@ -1,19 +1,30 @@
+#pragma once
+
 //#include <google/protobuf/any.pb.h>
 #include <google/protobuf/dynamic_message.h>
 
-enum ComparisonOperator { Equal, NotEqual, GreaterThen, GreatherThenEqual, SmallerThen, SmallerThenEqual };
+
 
 class Query
 {
+
+public:
+
+enum ComparisonOperator { None, Equal, NotEqual, GreaterThen, GreatherThenEqual, SmallerThen, SmallerThenEqual };
+
 private:
     bool error;
     std::string errorMessage;
+    std::string queryName;
+    std::string queryValue;
+    Query::ComparisonOperator queryOp = None;
 
 
 public:
 
-    std::string fieldName;
-    std::string fieldValue;
+    void setName(std::string name);
+    void setValue(std::string value);
+    void setComparisonOperator(ComparisonOperator );
 
     Query();
     bool hasError();

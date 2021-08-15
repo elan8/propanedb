@@ -4,8 +4,22 @@ Query::Query()
 {
     error = false;
     errorMessage = "";
-    fieldName = "";
-    fieldValue = "";
+    queryName = "";
+    queryValue = "";
+}
+
+void Query::setName(std::string name)
+{
+    queryName = name;
+}
+void Query::setValue(std::string value)
+{
+    queryValue = value;
+}
+
+void Query::setComparisonOperator(ComparisonOperator op){
+    queryOp=op;
+
 }
 
 void Query::setError(std::string message)
@@ -29,7 +43,7 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     bool output = false;
     //std::string fieldName = this->fieldName;
 
-    const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(fieldName);
+    const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(queryName);
     const google::protobuf::Reflection *reflection = message->GetReflection();
 
     google::protobuf::FieldDescriptor::CppType type = fd->cpp_type();
@@ -40,9 +54,10 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     {
         bool value = reflection->GetBool(*message, fd);
 
-        bool desiredValue=false;
-        if (fieldValue.find("true")){
-            desiredValue=true;
+        bool desiredValue = false;
+        if (queryValue.find("true"))
+        {
+            desiredValue = true;
         }
 
         if (value == desiredValue)
@@ -52,10 +67,10 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
         break;
     }
 
-        case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
+    case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
     {
         std::string value = reflection->GetString(*message, fd);
-        if (value.compare(fieldValue)==0)
+        if (value.compare(queryValue) == 0)
         {
             output = true;
         }
