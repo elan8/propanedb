@@ -45,7 +45,7 @@
 # cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1 && \
 # make && make install
 
-FROM jevon82/propanedb-base
+FROM jevon82/propanedb-base as builder
 
 #build propaneDB
 WORKDIR /app 
@@ -58,4 +58,17 @@ RUN mkdir build
 WORKDIR /app/build 
 RUN cmake .. 
 RUN make -j 2
-#RUN ./propane_test
+#RUN ./server
+RUN mkdir test1
+#RUN cd lib && ls -la
+WORKDIR /app/dependencies/deploy/lib
+RUN ls -la
+
+FROM alpine:3.14
+RUN apk add --no-cache libstdc++
+#zsh alpine-sdk libc-dev  musl-dev linux-headers  zlib-dev lzip 
+WORKDIR /app 
+COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
+COPY --from=builder /app/build/libpropane_lib.a .
+COPY --from=builder /app/build/server .
+ENTRYPOINT [ "./server" ]
