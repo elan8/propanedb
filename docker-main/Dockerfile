@@ -58,17 +58,21 @@ RUN mkdir build
 WORKDIR /app/build 
 RUN cmake .. 
 RUN make -j 2
-#RUN ./server
-RUN mkdir test1
-#RUN cd lib && ls -la
 WORKDIR /app/dependencies/deploy/lib
-RUN ls -la
 
-FROM alpine:3.14
-RUN apk add --no-cache libstdc++
-#zsh alpine-sdk libc-dev  musl-dev linux-headers  zlib-dev lzip 
+FROM alpine:3.14.1
 WORKDIR /app 
 COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
 COPY --from=builder /app/build/libpropane_lib.a .
 COPY --from=builder /app/build/server .
-ENTRYPOINT [ "./server" ]
+RUN chmod 777 /app/server
+
+RUN apk add --no-cache libstdc++ supervisor
+RUN addgroup -S propane && adduser -S propane -G propane
+RUN chown -R propane /app
+
+USER propane
+EXPOSE 50051
+WORKDIR /app
+COPY docker-main/supervisord.conf .
+CMD ["/usr/bin/supervisord"]
