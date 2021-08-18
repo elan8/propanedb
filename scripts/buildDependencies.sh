@@ -13,7 +13,7 @@ if [ ! -d "./boost_1_76_0 " ]; then
 fi
 cd boost_1_76_0
 ./bootstrap.sh --prefix=../deploy/
-./b2  --with-filesystem --with-system install
+./b2 release --with-filesystem --with-system install
 cd ..
 
 #build gRPC
@@ -24,6 +24,7 @@ git submodule update --init
 mkdir -p build
 cd build
 cmake .. \
+-DCMAKE_BUILD_TYPE=Release \
 -DgRPC_BUILD_TESTS=OFF \
 -DgRPC_BUILD_CSHARP_EXT=OFF \
 -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
@@ -58,6 +59,6 @@ tar -xzf 3.2.0.tar.gz
 cd PEGTL-3.2.0
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ 
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release 
 make
 make install

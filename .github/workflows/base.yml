@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Main
+name: Base
 
 # Controls when the workflow will run
 on:
@@ -29,11 +29,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Docker Production Step 1
-        run: ./scripts/buildDockerProd1.sh
-      - name: Run unit test
-        run: docker run propanedb-prod1 ./propane_test
-      - name: Build Docker Production Step 2
-        run: ./scripts/buildDockerProd2.sh        
+      - name: Build Docker Base
+        run: ./scripts/buildDockerBase.sh
       - name: Push to dockerhub
-        run: docker push jevon82/propanedb
+        run: docker push jevon82/propanedb-base

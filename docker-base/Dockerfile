@@ -6,14 +6,14 @@ WORKDIR /app/dependencies
 RUN wget --progress=dot:giga https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2  && \
     tar --bzip2 -xf boost_1_76_0.tar.bz2 && cd /app/dependencies/boost_1_76_0 && \
     ./bootstrap.sh --prefix=../deploy/ && \
-    ./b2  --with-filesystem --with-system install && cd /app/dependencies/ && rm -R boost_1_76_0 && rm boost_1_76_0.tar.bz2 
+    ./b2 release --with-filesystem --with-system install && cd /app/dependencies/ && rm -R boost_1_76_0 && rm boost_1_76_0.tar.bz2 
 #build gflags
 WORKDIR /app/dependencies
 RUN git clone https://github.com/gflags/gflags.git && \
     cd gflags && \
     mkdir build && \
     cd build && \
-    cmake -DBUILD_SHARED_LIBS=1 -DGFLAGS_INSTALL_SHARED_LIBS=1 -DCMAKE_INSTALL_PREFIX=../../deploy/ .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DGFLAGS_INSTALL_SHARED_LIBS=1 -DCMAKE_INSTALL_PREFIX=../../deploy/ .. && \
     make && make install && cd /app/dependencies/ && rm -R gflags   
 #install gRPC
 WORKDIR /app/dependencies
@@ -23,6 +23,7 @@ git submodule update --init && cd /app/dependencies/grpc &&\
 mkdir -p build && \
 cd build && \
 cmake .. \
+-DCMAKE_BUILD_TYPE=Release \
 -DgRPC_BUILD_TESTS=OFF \
 -DgRPC_BUILD_CSHARP_EXT=OFF \
 -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
@@ -52,6 +53,6 @@ tar -xzf 3.2.0.tar.gz && \
 cd PEGTL-3.2.0 && \
 mkdir build && \
 cd build && \
-cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release && \
 make && \
 make install 
