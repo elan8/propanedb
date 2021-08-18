@@ -32,14 +32,14 @@ cmake .. \
 make -j 2 && make install && rm -R /app/dependencies/grpc/build
 #install RocksDB
 WORKDIR /app/dependencies
-RUN wget --progress=dot:giga https://github.com/facebook/rocksdb/archive/refs/tags/v6.20.3.tar.gz && \
+RUN wget https://github.com/facebook/rocksdb/archive/refs/tags/v6.20.3.tar.gz && \
 tar -xzf v6.20.3.tar.gz && cd rocksdb-6.20.3 && \
 mkdir build && cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1 && \
 make && make install && cd /app/dependencies && rm -R rocksdb-6.20.3 && rm v6.20.3.tar.gz
 # glog
 WORKDIR /app/dependencies
-RUN wget --progress=dot:giga https://github.com/google/glog/archive/refs/tags/v0.5.0.tar.gz && \
+RUN wget https://github.com/google/glog/archive/refs/tags/v0.5.0.tar.gz && \
 tar -xzf v0.5.0.tar.gz && \
 cd glog-0.5.0 && \
 mkdir build && cd build && \
@@ -48,7 +48,7 @@ make && \
 make install
 #build PEGTL
 WORKDIR /app/dependencies
-RUN wget --progress=dot:giga https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz && \
+RUN wget https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz && \
 tar -xzf 3.2.0.tar.gz && \
 cd PEGTL-3.2.0 && \
 mkdir build && \
