@@ -24,6 +24,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      - name: Docker Login
+        uses: docker/login-action@v1.10.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Build docker image
       - name: Build Docker container image
@@ -31,4 +36,6 @@ jobs:
       # Run unit test
       - name: Run unit test
         run: docker run propanedb ./propane_test
-   
+      # Push to DockerHub  
+      - name: Push to dockerhub
+        run: docker push jevon82/propanedb
