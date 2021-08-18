@@ -3,7 +3,7 @@ RUN apk add --no-cache alpine-sdk cmake linux-headers zlib-dev
 
 WORKDIR /app/dependencies
 #build Boost
-RUN wget --progress=dot:giga https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2  && \
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2  && \
     tar --bzip2 -xf boost_1_76_0.tar.bz2 && cd /app/dependencies/boost_1_76_0 && \
     ./bootstrap.sh --prefix=../deploy/ && \
     ./b2 release --with-filesystem --with-system install && cd /app/dependencies/ && rm -R boost_1_76_0 && rm boost_1_76_0.tar.bz2 
