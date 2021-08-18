@@ -45,20 +45,20 @@
 # cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1 && \
 # make && make install
 
-FROM jevon82/propanedb-base as builder
+FROM propanedb-prod1 as builder
 
 #build propaneDB
-WORKDIR /app 
-COPY CMakeLists.txt CMakeLists.txt 
-COPY protos protos
-COPY src src
-COPY test test
-COPY cmake cmake
-RUN mkdir build 
-WORKDIR /app/build 
-RUN cmake .. 
-RUN make -j 2
-WORKDIR /app/dependencies/deploy/lib
+# WORKDIR /app 
+# COPY CMakeLists.txt CMakeLists.txt 
+# COPY protos protos
+# COPY src src
+# COPY test test
+# COPY cmake cmake
+# RUN mkdir build 
+# WORKDIR /app/build 
+# RUN cmake .. 
+# RUN make -j 2
+# WORKDIR /app/dependencies/deploy/lib
 
 FROM alpine:3.14.1
 WORKDIR /app 
@@ -74,5 +74,5 @@ RUN chown -R propane /app
 USER propane
 EXPOSE 50051
 WORKDIR /app
-COPY docker-main/supervisord.conf .
+COPY docker-prod2/supervisord.conf .
 CMD ["/usr/bin/supervisord"]

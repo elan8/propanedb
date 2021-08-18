@@ -29,13 +29,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Build docker image
-      - name: Build Docker container image
-        run: ./buildDockerMain.sh
-      # Run unit test
+      - name: Build Docker Production Step 1
+        run: ./scripts/buildDockerProd1.sh
       - name: Run unit test
-        run: docker run propanedb ./propane_test
-      # Push to DockerHub  
+        run: docker run propanedb-prod1 ./propane_test
+      - name: Build Docker Production Step 2
+        run: ./scripts/buildDockerProd2.sh        
       - name: Push to dockerhub
         run: docker push jevon82/propanedb
