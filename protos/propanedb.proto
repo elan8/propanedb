@@ -5,11 +5,7 @@ syntax = "proto3";
 import "google/protobuf/any.proto";
 import "google/protobuf/descriptor.proto";
 
-option java_multiple_files = true;
-option java_package = "propane";
-option java_outer_classname = "PropaneProto";
-option objc_class_prefix = "Prop";
-option go_package = "propane/";
+option go_package = "pb/";
 
 package propane;
 
