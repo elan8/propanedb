@@ -14,5 +14,6 @@ RUN chown -R propane /app
 USER propane
 EXPOSE 50051
 WORKDIR /app
+RUN ls -la
 COPY docker-prod2/supervisord.conf .
 CMD ["/usr/bin/supervisord"]
