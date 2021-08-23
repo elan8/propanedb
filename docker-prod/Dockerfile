@@ -28,5 +28,5 @@ USER propane
 EXPOSE 50051
 WORKDIR /app
 RUN ls -la
-COPY docker-prod2/supervisord.conf .
+COPY docker-prod/supervisord.conf .
 CMD ["/usr/bin/supervisord"]
