@@ -8,5 +8,7 @@ COPY test test
 COPY cmake cmake
 RUN mkdir build 
 WORKDIR /app/build 
-RUN cmake -DCMAKE_BUILD_TYPE=Release .. 
+RUN cmake -DCMAKE_BUILD_TYPE=Debug .. 
 RUN make -j 2
+RUN ctest -C Debug --output-on-failure --verbose
+  

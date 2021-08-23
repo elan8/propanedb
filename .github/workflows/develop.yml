@@ -1,14 +1,14 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Main
+name: Develop
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ main ]
+    branches: [ develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ develop ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -24,13 +24,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - name: Docker Login
-        uses: docker/login-action@v1.10.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Docker for production
-        run: ./scripts/buildDockerProd.sh
-    
-      - name: Push to dockerhub
-        run: docker push jevon82/propanedb
+      - name: Build Docker for develop
+        run: ./scripts/buildDockerDevelop.sh
+
