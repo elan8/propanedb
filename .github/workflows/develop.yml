@@ -24,14 +24,6 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - name: Configure
-        run: |
-          cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Debug
-      - name: Build
-        run: |
-          cmake --build build --config Debug
-      - name: Test
-        run: |
-          cd build
-          ctest -C Debug --output-on-failure --verbose
+      - name: Build Docker for develop
+        run: ./scripts/buildDockerDevelop.sh
 
