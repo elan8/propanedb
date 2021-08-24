@@ -1,11 +1,9 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Base
-
+name: Build base images
 # Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  schedule:
+    - cron: '16 02 * * 3'
+  workflow_dispatch:  
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -18,12 +16,18 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - name: Docker Login
-        uses: docker/login-action@v1.10.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build Docker Base
-        run: ./scripts/buildDockerBase.sh
-      - name: Push to dockerhub
-        run: docker push jevon82/propanedb-base
+      - name: Log in to registry
+        # This is where you will update the PAT to GITHUB_TOKEN
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build Docker Base Alpine
+        run: ./scripts/buildDockerBaseAlpine.sh
+      - name: Build Docker Base Debian
+        run: ./scripts/buildDockerBaseDebian.sh
+      - name: Tag 1
+        run: docker tag propanedb-base-alpine ghcr.io/elan8/propanedb-base-alpine:latest
+      - name: Tag 2
+        run: docker tag propanedb-base-debian ghcr.io/elan8/propanedb-base-debian:latest        
+      - name: Push 1
+        run: docker push ghcr.io/elan8/propanedb-base-alpine:latest
+      - name: Push 2
+        run: docker push ghcr.io/elan8/propanedb-base-debian:latest          
