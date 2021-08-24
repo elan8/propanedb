@@ -34,3 +34,7 @@ jobs:
         run: docker tag propanedb ghcr.io/elan8/propanedb:v0.1.0    
       - name: Push 
         run: docker push ghcr.io/elan8/propanedb:v0.1.0  
+      - name: Tag latest
+        run: docker tag propanedb ghcr.io/elan8/propanedb:latest 
+      - name: Push latest
+        run: docker push ghcr.io/elan8/propanedb:latest        
