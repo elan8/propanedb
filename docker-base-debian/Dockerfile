@@ -71,3 +71,8 @@ RUN wget --progress=dot:giga https://github.com/taocpp/PEGTL/archive/refs/tags/3
     cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
     make && \
     make install 
+
+WORKDIR /app
+RUN curl -L https://github.com/codacy/codacy-analysis-cli/archive/master.tar.gz | tar xvz && \
+cd codacy-analysis-cli-* && sudo make install
+    

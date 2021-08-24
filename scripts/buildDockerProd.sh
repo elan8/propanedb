@@ -1,1 +1,1 @@
-docker build -t jevon82/propanedb -f ./docker-prod/Dockerfile .
+docker build -t propanedb -f ./docker-prod/Dockerfile .
