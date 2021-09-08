@@ -28,8 +28,14 @@ cmake .. \
 -DgRPC_BUILD_CSHARP_EXT=OFF \
 -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
 -DgRPC_ZLIB_PROVIDER=package \
+-DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
 -DCMAKE_INSTALL_PREFIX=../../deploy/ && \
-make -j 2 && make install && rm -R /app/dependencies/grpc/build
+make -j 2 && make install && rm -R /app/dependencies/grpc/build 
 #install RocksDB
 WORKDIR /app/dependencies
 RUN wget https://github.com/facebook/rocksdb/archive/refs/tags/v6.20.3.tar.gz && \
@@ -45,7 +51,7 @@ cd glog-0.5.0 && \
 mkdir build && cd build && \
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release && \
 make && \
-make install
+make install && cd /app/dependencies && rm -R glog-0.5.0 && rm v0.5.0.tar.gz
 #build PEGTL
 WORKDIR /app/dependencies
 RUN wget https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz && \
@@ -53,6 +59,6 @@ tar -xzf 3.2.0.tar.gz && \
 cd PEGTL-3.2.0 && \
 mkdir build && \
 cd build && \
-cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release && \
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DPEGTL_BUILD_TESTS=0 -DPEGTL_BUILD_EXAMPLES=0 && \
 make && \
-make install 
+make install && cd /app/dependencies && rm -R PEGTL-3.2.0 && rm 3.2.0.tar.gz

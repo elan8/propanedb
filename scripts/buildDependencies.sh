@@ -29,6 +29,12 @@ cmake .. \
 -DgRPC_BUILD_CSHARP_EXT=OFF \
 -DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
 -DgRPC_ZLIB_PROVIDER=package \
+-DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_NODE_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_PHP_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF \
+-DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF \
 -DCMAKE_INSTALL_PREFIX=../../deploy/
 make
 make install
@@ -39,19 +45,25 @@ cd ..
 wget https://github.com/facebook/rocksdb/archive/refs/tags/v6.20.3.tar.gz
 tar -xzf v6.20.3.tar.gz
 cd rocksdb-6.20.3
-mkdir build && cd build
+mkdir build 
+cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DROCKSDB_BUILD_SHARED=0 -DWITH_BENCHMARK_TOOLS=0 -DUSE_RTTI=1
 make
 make install
+cd ..
+cd ..
 
 #build glog
 wget https://github.com/google/glog/archive/refs/tags/v0.5.0.tar.gz
 tar -xzf v0.5.0.tar.gz
 cd glog-0.5.0
-mkdir build && cd build
+mkdir build 
+cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release 
 make
 make install
+cd ..
+cd ..
 
 #build PEGTL
 wget https://github.com/taocpp/PEGTL/archive/refs/tags/3.2.0.tar.gz
@@ -59,6 +71,8 @@ tar -xzf 3.2.0.tar.gz
 cd PEGTL-3.2.0
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release 
+cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release -DPEGTL_BUILD_TESTS=0 -DPEGTL_BUILD_EXAMPLES=0
 make
 make install
+cd ..
+cd ..
