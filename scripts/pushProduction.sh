@@ -1,2 +1,2 @@
 #!/bin/bash
-docker push jevon82/propanedb
+docker push ghcr.io/elan8/propanedb
