@@ -43,6 +43,11 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     bool output = false;
     //std::string fieldName = this->fieldName;
 
+    if (queryOp==Query::Star)
+    {
+        return true;
+    }
+
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(queryName);
     const google::protobuf::Reflection *reflection = message->GetReflection();
 

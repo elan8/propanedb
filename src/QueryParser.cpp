@@ -32,11 +32,15 @@ namespace application
     {
     };
 
+    struct star : one<'*'>
+    {
+    };
+
     struct op : sor<equal, gt, gte>
     {
     };
 
-    struct expression : seq<fieldname, op, value, eof>
+    struct expression : sor< seq<fieldname, op, value, eof>, star>
     {
     };
 
@@ -49,6 +53,19 @@ namespace application
     struct my_action
         : tao::pegtl::nothing<Rule>
     {
+    };
+
+            template <>
+    struct my_action<application::star>
+    {
+        template <typename ActionInput>
+        static void apply(const ActionInput &in, Query &out)
+        {
+            LOG(INFO) << "Operator = STAR" << std::endl;
+            //out.setFieldValue(in.string());
+            out.setComparisonOperator(Query::Star);
+
+        }
     };
 
         template <>

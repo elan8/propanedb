@@ -10,7 +10,7 @@ class Query
 
 public:
 
-enum ComparisonOperator { None, Equal, NotEqual, GreaterThen, GreatherThenEqual, SmallerThen, SmallerThenEqual };
+enum ComparisonOperator { None, Equal, NotEqual, GreaterThen, GreatherThenEqual, SmallerThen, SmallerThenEqual, Star };
 
 private:
     bool error;
