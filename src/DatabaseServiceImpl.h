@@ -43,12 +43,12 @@ private:
 
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
     rocksdb::DB* GetDatabase(string name);
-    string GetDatabaseNameFromContext(grpc::ServerContext* context);
+    //string GetDatabaseNameFromContext(grpc::ServerContext* context);
 
 public:
     DatabaseServiceImpl(string path);
     ~DatabaseServiceImpl();
-    grpc::Status Put(ServerContext *context, const propane::PropaneEntity *request,
+    grpc::Status Put(ServerContext *context, const propane::PropanePut *request,
                      propane::PropaneId *reply) override;
     grpc::Status Get(ServerContext *context, const propane::PropaneId *request,
                      propane::PropaneEntity *reply) override;

@@ -93,8 +93,10 @@ TEST_F(PropanedbTest, PutGet)
   {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity);
-    propane::PropaneEntity request;
-    request.set_allocated_data(anyMessage);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -149,8 +151,10 @@ TEST_F(PropanedbTest, PutSearch)
   {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity1);
-    propane::PropaneEntity request;
-    request.set_allocated_data(anyMessage);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -163,8 +167,10 @@ TEST_F(PropanedbTest, PutSearch)
   {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity2);
-    propane::PropaneEntity request;
-    request.set_allocated_data(anyMessage);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -200,6 +206,97 @@ TEST_F(PropanedbTest, PutSearch)
 
 }
 
+
+
+TEST_F(PropanedbTest, FindAll)
+{
+  std::string id;
+  test::TodoItem entity1;
+  string description1("Item1");
+  entity1.set_description(description1);
+  entity1.set_isdone(false);
+
+  test::TodoItem entity2;
+  string description2("Item2");
+  entity2.set_description(description2);
+  entity2.set_isdone(true);
+
+  grpc::ServerContext context;
+  context.AddInitialMetadata("database","test");
+  {
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
+    google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
+
+    propane::PropaneDatabase request;
+    request.set_allocated_descriptor_set(fd);
+    propane::PropaneStatus reply;
+    grpc::Status s = service->CreateDatabase(&context, &request, &reply);
+  }
+
+  {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(entity1);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
+
+    propane::PropaneId reply;
+    grpc::Status s = service->Put(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+  {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(entity2);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
+
+    propane::PropaneId reply;
+    grpc::Status s = service->Put(&context, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+  {
+    propane::PropaneSearch request;
+    request.set_query("*");
+    request.set_entitytype("test.TodoItem");
+
+    propane::PropaneEntities reply;
+    grpc::Status s = service->Search(&context, &request, &reply);
+    //cout << "Reply =" <<reply.entities_size();
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(reply.entities_size(), 2);
+  }
+
+  {
+    propane::PropaneSearch request;
+    request.set_query("description==Item1");
+    request.set_entitytype("test.TodoItem");
+
+    propane::PropaneEntities reply;
+    grpc::Status s = service->Search(&context, &request, &reply);
+    //cout << "Reply =" <<reply.entities_size();
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(reply.entities_size(), 1);
+  }
+
+}
+
+
+
 TEST_F(PropanedbTest, PutDelete)
 {
   std::string id;
@@ -228,8 +325,10 @@ TEST_F(PropanedbTest, PutDelete)
   {
     Any *anyMessage = new Any();
     anyMessage->PackFrom(entity);
-    propane::PropaneEntity request;
-    request.set_allocated_data(anyMessage);
+    propane::PropanePut request;
+    propane::PropaneEntity entity;
+    entity.set_allocated_data(anyMessage);
+    request.set_allocated_entity(&entity);
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);

@@ -16,14 +16,14 @@ RUN make -j 2
 FROM alpine:3.14.1
 LABEL org.opencontainers.image.source https://github.com/elan8/propanedb
 WORKDIR /app 
+RUN apk add --no-cache libstdc++ supervisor
+RUN addgroup -S propane && adduser -S propane -G propane
+RUN chown -R propane /app
+
 COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
 COPY --from=builder /app/build/libpropane_lib.a .
 COPY --from=builder /app/build/server .
 RUN chmod 777 /app/server *
-
-RUN apk add --no-cache libstdc++ supervisor
-RUN addgroup -S propane && adduser -S propane -G propane
-RUN chown -R propane /app
 
 USER propane
 EXPOSE 50051

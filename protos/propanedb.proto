@@ -11,14 +11,14 @@ package propane;
 
 service Database {
   rpc CreateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
-  rpc Put (PropaneEntity) returns (PropaneId) {}
+  rpc Put (PropanePut) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
   rpc Delete (PropaneId) returns (PropaneStatus) {}
   rpc Search (PropaneSearch) returns (PropaneEntities) {}
 }
 
 message PropaneDatabase{
-  string name = 1;
+  string databaseName = 1;
   google.protobuf.FileDescriptorSet descriptor_set = 2;
 }
 
@@ -34,12 +34,19 @@ message PropaneStatus {
   string statusMessage = 1;
 }
 
+message PropanePut{
+  string databaseName = 1;
+  PropaneEntity entity = 2;
+}
+
 message PropaneId{
-  string id = 1;
+  string databaseName = 1;
+  string id = 2;
 }
 
 message PropaneSearch {
-  string entityType = 1;
-  string query = 2;
+  string databaseName = 1;
+  string entityType = 2;
+  string query = 3;
   
 }

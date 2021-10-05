@@ -35,13 +35,15 @@ void RunServer()
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "PropaneDB listening on " << server_address << std::endl;
+  LOG(INFO) << "PropaneDB started: Listening on " << server_address << std::endl;
+  //std::cout << "PropaneDB 2 listening on " << server_address << std::endl;
   server->Wait();
 }
 
 int main(int argc, char **argv)
 {
   google::InitGoogleLogging(argv[0]);
+  FLAGS_logtostderr = 1;
   RunServer();
   return 0;
 }
