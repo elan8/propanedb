@@ -69,9 +69,9 @@ TEST_F(PropanedbTest, PutGet)
 {
   std::string id;
 
-  test::TodoItem entity;
+  test::TodoItem item;
   string description("Test PropaneDB");
-  entity.set_description(description);
+  item.set_description(description);
 
   grpc::ServerContext context;
   context.AddInitialMetadata("database","test");
@@ -86,29 +86,33 @@ TEST_F(PropanedbTest, PutGet)
 
     propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
+      request.set_databasename("test");
     propane::PropaneStatus reply;
     grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item);
 
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
-
+    LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
     EXPECT_EQ(s.ok(), true);
     EXPECT_GT(reply.id().length(), 0);
     id = reply.id();
+    
   }
 
   {
     propane::PropaneId request;
     request.set_id(id);
+    request.set_databasename("test");
 
     propane::PropaneEntity reply;
     grpc::Status s = service->Get(&context, &request, &reply);
@@ -122,15 +126,15 @@ TEST_F(PropanedbTest, PutGet)
 TEST_F(PropanedbTest, PutSearch)
 {
   std::string id;
-  test::TodoItem entity1;
+  test::TodoItem item1;
   string description1("Item1");
-  entity1.set_description(description1);
-  entity1.set_isdone(false);
+  item1.set_description(description1);
+  item1.set_isdone(false);
 
-  test::TodoItem entity2;
+  test::TodoItem item2;
   string description2("Item2");
-  entity2.set_description(description2);
-  entity2.set_isdone(true);
+  item2.set_description(description2);
+  item2.set_isdone(true);
 
   grpc::ServerContext context;
   context.AddInitialMetadata("database","test");
@@ -144,17 +148,24 @@ TEST_F(PropanedbTest, PutSearch)
 
     propane::PropaneDatabase request;
     request.set_allocated_descriptor_set(fd);
+    request.set_databasename("test");
     propane::PropaneStatus reply;
     grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity1);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item1);
+
+    // Any *anyMessage = new Any();
+    // anyMessage->PackFrom(entity1);
+    // propane::PropanePut request;
+    // propane::PropaneEntity entity;
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -162,15 +173,17 @@ TEST_F(PropanedbTest, PutSearch)
     EXPECT_EQ(s.ok(), true);
     EXPECT_GT(reply.id().length(), 0);
     id = reply.id();
+    //delete anyMessage;
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity2);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item2);
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -184,6 +197,7 @@ TEST_F(PropanedbTest, PutSearch)
     propane::PropaneSearch request;
     request.set_query("isDone==true");
     request.set_entitytype("test.TodoItem");
+    request.set_databasename("test");
 
     propane::PropaneEntities reply;
     grpc::Status s = service->Search(&context, &request, &reply);
@@ -196,6 +210,7 @@ TEST_F(PropanedbTest, PutSearch)
     propane::PropaneSearch request;
     request.set_query("description==Item1");
     request.set_entitytype("test.TodoItem");
+    request.set_databasename("test");
 
     propane::PropaneEntities reply;
     grpc::Status s = service->Search(&context, &request, &reply);
@@ -211,15 +226,15 @@ TEST_F(PropanedbTest, PutSearch)
 TEST_F(PropanedbTest, FindAll)
 {
   std::string id;
-  test::TodoItem entity1;
+  test::TodoItem item1;
   string description1("Item1");
-  entity1.set_description(description1);
-  entity1.set_isdone(false);
+  item1.set_description(description1);
+  item1.set_isdone(false);
 
-  test::TodoItem entity2;
+  test::TodoItem item2;
   string description2("Item2");
-  entity2.set_description(description2);
-  entity2.set_isdone(true);
+  item2.set_description(description2);
+  item2.set_isdone(true);
 
   grpc::ServerContext context;
   context.AddInitialMetadata("database","test");
@@ -232,18 +247,20 @@ TEST_F(PropanedbTest, FindAll)
     //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneDatabase request;
+    request.set_databasename("test");
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
     grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity1);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item1);
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -254,12 +271,13 @@ TEST_F(PropanedbTest, FindAll)
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity2);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item2);
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -273,6 +291,7 @@ TEST_F(PropanedbTest, FindAll)
     propane::PropaneSearch request;
     request.set_query("*");
     request.set_entitytype("test.TodoItem");
+    request.set_databasename("test");
 
     propane::PropaneEntities reply;
     grpc::Status s = service->Search(&context, &request, &reply);
@@ -285,6 +304,7 @@ TEST_F(PropanedbTest, FindAll)
     propane::PropaneSearch request;
     request.set_query("description==Item1");
     request.set_entitytype("test.TodoItem");
+    request.set_databasename("test");
 
     propane::PropaneEntities reply;
     grpc::Status s = service->Search(&context, &request, &reply);
@@ -301,9 +321,9 @@ TEST_F(PropanedbTest, PutDelete)
 {
   std::string id;
 
-  test::TodoItem entity;
+  test::TodoItem item1;
   string description("Test PropaneDB");
-  entity.set_description(description);
+  item1.set_description(description);
 
   grpc::ServerContext context;
   context.AddInitialMetadata("database","test");
@@ -317,18 +337,20 @@ TEST_F(PropanedbTest, PutDelete)
     //LOG(INFO) << "Descriptor: " << fd->DebugString() << std::endl;
 
     propane::PropaneDatabase request;
+    request.set_databasename("test");
     request.set_allocated_descriptor_set(fd);
     propane::PropaneStatus reply;
     grpc::Status s = service->CreateDatabase(&context, &request, &reply);
   }
 
   {
-    Any *anyMessage = new Any();
-    anyMessage->PackFrom(entity);
     propane::PropanePut request;
-    propane::PropaneEntity entity;
-    entity.set_allocated_data(anyMessage);
-    request.set_allocated_entity(&entity);
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any() ;
+    anyMessage->PackFrom(item1);
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
 
     propane::PropaneId reply;
     grpc::Status s = service->Put(&context, &request, &reply);
@@ -342,6 +364,7 @@ TEST_F(PropanedbTest, PutDelete)
   {
     propane::PropaneId request;
     request.set_id(id);
+    request.set_databasename("test");
 
     propane::PropaneStatus reply;
     grpc::Status s = service->Delete(&context, &request, &reply);
@@ -353,6 +376,7 @@ TEST_F(PropanedbTest, PutDelete)
   {
     propane::PropaneId request;
     request.set_id(id);
+    request.set_databasename("test");
 
     propane::PropaneStatus reply;
     grpc::Status s = service->Delete(&context, &request, &reply);

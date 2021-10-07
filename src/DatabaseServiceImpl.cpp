@@ -25,12 +25,15 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const propane::PropaneDatabase *request,
                                                  propane::PropaneStatus *reply)
 {
+  //LOG(INFO) << "CreateDatabase" << endl;
   DB *db;
   string name = request->databasename();
+   LOG(INFO) << "CreateDatabase databaseName="<<name << endl;
   fs::path p1;
   p1 += directory;
   p1 /= name;
   string path = p1.generic_string();
+  LOG(INFO) << "path="<< path << endl;
 
   google::protobuf::FileDescriptorSet fds = request->descriptor_set();
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
@@ -48,7 +51,8 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   options.create_if_missing = true;
   // create and open DB
   ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-  LOG(INFO) << "Status code="s << s.code() << endl;
+  LOG(INFO) << "Status code="s << s.ToString() << endl;
+  assert(s.ok());
 
   databases[name] = db;
 
@@ -57,6 +61,7 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
 
 rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
 {
+  LOG(INFO) << "GetDatabase" << endl;
   fs::path p1;
   p1 += directory;
   p1 /= name;
@@ -79,7 +84,8 @@ rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
     //options.create_if_missing = true;
     // open DB
     ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-    LOG(INFO) << "Status code="s << s.code() << endl;
+    LOG(INFO) << "Status code="s << s.ToString() << endl;
+    
 
     assert(s.ok());
     databases[name] = db;
@@ -91,13 +97,14 @@ rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
 grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::PropanePut *request,
                                       propane::PropaneId *reply)
 {
+  LOG(INFO) << "Put" << endl;
   string name = request->databasename();
 
   Any any = (request->entity()).data();
   string typeUrl = any.type_url();
-  //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
+  LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
-  //LOG(INFO) << "Any TypeName=" << typeName << endl;
+  LOG(INFO) << "Any TypeName=" << typeName << endl;
   // cout << "Descriptor pool=" << descriptorDB-> << endl;
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor != nullptr)
@@ -133,6 +140,7 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
 grpc::Status DatabaseServiceImpl::Get(ServerContext *context, const propane::PropaneId *request,
                                       propane::PropaneEntity *reply)
 {
+  LOG(INFO) << "Get" << endl;
   string name = request->databasename();
 
   string serializedAny;
@@ -169,6 +177,7 @@ grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::
 grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::PropaneSearch *request,
                                          propane::PropaneEntities *reply)
 {
+  LOG(INFO) << "Search" << endl;
   string name = request->databasename();
   ROCKSDB_NAMESPACE::Iterator *it = GetDatabase(name)->NewIterator(ReadOptions());
 
@@ -221,6 +230,7 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
 
 bool DatabaseServiceImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string entityType)
 {
+  LOG(INFO) << "IsCorrectEntityType" << endl;
   bool output = false;
   string typeUrl = any->type_url();
   string typeName = Util::getTypeName(typeUrl);
