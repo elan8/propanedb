@@ -2,6 +2,7 @@
 FROM ghcr.io/elan8/propanedb-base-alpine as builder
 
 WORKDIR /app 
+RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
 COPY CMakeLists.txt CMakeLists.txt 
 COPY protos protos
 COPY src src

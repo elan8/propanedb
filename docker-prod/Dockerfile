@@ -16,6 +16,7 @@ RUN make -j 2
 FROM alpine:3.14.1
 LABEL org.opencontainers.image.source https://github.com/elan8/propanedb
 WORKDIR /app 
+RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
 RUN apk add --no-cache libstdc++ supervisor
 RUN addgroup -S propane && adduser -S propane -G propane
 RUN chown -R propane /app

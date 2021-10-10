@@ -28,12 +28,12 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   //LOG(INFO) << "CreateDatabase" << endl;
   DB *db;
   string name = request->databasename();
-   LOG(INFO) << "CreateDatabase databaseName="<<name << endl;
+  LOG(INFO) << "CreateDatabase databaseName=" << name << endl;
   fs::path p1;
   p1 += directory;
   p1 /= name;
   string path = p1.generic_string();
-  LOG(INFO) << "path="<< path << endl;
+  LOG(INFO) << "path=" << path << endl;
 
   google::protobuf::FileDescriptorSet fds = request->descriptor_set();
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
@@ -45,6 +45,13 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   }
   pool = new google::protobuf::DescriptorPool(descriptorDB);
 
+  db = databases[name];
+  bool databaseExists = fs::exists(path);
+  if (db != nullptr || databaseExists)
+  {
+    return grpc::Status(grpc::StatusCode::ALREADY_EXISTS, "A database with this name already exists");
+  }
+
   Options options;
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
@@ -55,7 +62,6 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   assert(s.ok());
 
   databases[name] = db;
-
   return grpc::Status::OK;
 }
 
@@ -85,7 +91,6 @@ rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
     // open DB
     ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
     LOG(INFO) << "Status code="s << s.ToString() << endl;
-    
 
     assert(s.ok());
     databases[name] = db;

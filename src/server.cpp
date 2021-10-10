@@ -20,9 +20,9 @@ using grpc::Status;
 using namespace std;
 
 #if defined(OS_WIN)
-std::string kDBPath = "C:\\Windows\\TEMP\\rocksdb_simple_example";
+std::string kDBPath = "C:\\Windows\\VAR\\rocksdb";
 #else
-std::string kDBPath = "/tmp/rocksdb_simple_example";
+std::string kDBPath = "/var/rocksdb";
 #endif
 
 void RunServer()
