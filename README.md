@@ -16,7 +16,7 @@ Currently this project is still pre-alpha: not suitable for any practical usage 
 
 ## Drivers
 - [Golang driver](https://github.com/elan8/propanedb-go-driver)
-- [Demo](https://github.com/elan8/propanedb-demo
+- [Demo](https://github.com/elan8/propanedb-demo)
 
 ## Implementation
 - Storage engine is RocksDB.
