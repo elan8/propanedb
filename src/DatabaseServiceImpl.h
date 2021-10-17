@@ -26,14 +26,12 @@ using grpc::ServerContext;
 using grpc::Status;
 using propane::Database;
 
-
 using namespace ROCKSDB_NAMESPACE;
 using namespace std;
 
 class DatabaseServiceImpl final : public Database::Service
 {
 private:
-    //DB *db;
     string directory;
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
     const google::protobuf::DescriptorPool *pool ;
@@ -43,7 +41,6 @@ private:
 
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
     rocksdb::DB* GetDatabase(string name);
-    //string GetDatabaseNameFromContext(grpc::ServerContext* context);
 
 public:
     DatabaseServiceImpl(string path);

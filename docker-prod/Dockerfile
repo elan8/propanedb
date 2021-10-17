@@ -1,7 +1,4 @@
-#FROM propanedb-prod1 as builder
-#FROM jevon82/propanedb-base as builder
 FROM ghcr.io/elan8/propanedb-base-alpine as builder
-LABEL org.opencontainers.image.source https://github.com/elan8/propanedb
 WORKDIR /app 
 COPY CMakeLists.txt CMakeLists.txt 
 COPY protos protos
@@ -20,12 +17,10 @@ RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
 RUN apk add --no-cache libstdc++ supervisor
 RUN addgroup -S propane && adduser -S propane -G propane
 RUN chown -R propane /app
-
 COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
 COPY --from=builder /app/build/libpropane_lib.a .
 COPY --from=builder /app/build/server .
 RUN chmod 777 /app/server *
-
 USER propane
 EXPOSE 50051
 WORKDIR /app

@@ -1,6 +1,4 @@
-#FROM jevon82/propanedb-base as builder
 FROM ghcr.io/elan8/propanedb-base-alpine as builder
-
 WORKDIR /app 
 RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
 COPY CMakeLists.txt CMakeLists.txt 

@@ -4,9 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
-#include <boost/uuid/uuid.hpp>            // uuid class
-#include <boost/uuid/uuid_generators.hpp> // generators
-#include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
+#include <boost/uuid/uuid.hpp>           
+#include <boost/uuid/uuid_generators.hpp> 
+#include <boost/uuid/uuid_io.hpp>         
 
 class Util
 {
@@ -20,7 +20,6 @@ public:
   static std::string generateUUID()
   {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    //std::cout << uuid << std::endl;
     return to_string(uuid);
   }
 };

@@ -25,7 +25,6 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const propane::PropaneDatabase *request,
                                                  propane::PropaneStatus *reply)
 {
-  //LOG(INFO) << "CreateDatabase" << endl;
   DB *db;
   string name = request->databasename();
   LOG(INFO) << "CreateDatabase databaseName=" << name << endl;
@@ -56,7 +55,6 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
   options.create_if_missing = true;
-  // create and open DB
   ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
   LOG(INFO) << "Status code="s << s.ToString() << endl;
   assert(s.ok());
@@ -87,11 +85,8 @@ rocksdb::DB *DatabaseServiceImpl::GetDatabase(string name)
     Options options;
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
-    //options.create_if_missing = true;
-    // open DB
     ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
     LOG(INFO) << "Status code="s << s.ToString() << endl;
-
     assert(s.ok());
     databases[name] = db;
   }
@@ -110,15 +105,11 @@ grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::Pro
   LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
   LOG(INFO) << "Any TypeName=" << typeName << endl;
-  // cout << "Descriptor pool=" << descriptorDB-> << endl;
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor != nullptr)
   {
-    //LOG(INFO) << "Descriptor=" << descriptor->DebugString() << endl;
     google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
     any.UnpackTo(message);
-    //LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
-
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
     const google::protobuf::Reflection *reflection = message->GetReflection();
     string id = reflection->GetString(*message, fd);
@@ -169,7 +160,6 @@ grpc::Status DatabaseServiceImpl::Delete(ServerContext *context, const propane::
     if (!s.ok())
     {
       return grpc::Status(grpc::StatusCode::ABORTED, "Could not delete object");
-      //status = new grpc::Status::Status(grpc::StatusCode::ABORTED, "Could not delete object");
     }
   }
   else
@@ -191,36 +181,21 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
   {
     LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
   }
-
   reply->clear_entities();
-
   google::protobuf::RepeatedPtrField<::propane::PropaneEntity> *entities = reply->mutable_entities();
-
-  //LOG(ERROR) << "Entity =: " << entity->DebugString() << std::endl;
-
-  //LOG(ERROR) << "Entities length =: " << reply->entities_size() << std::endl;
-
   for (it->Seek(""); it->Valid(); it->Next())
   {
-    //LOG(INFO) << "Search: key=: " << it->key().ToString() << std::endl;
     google::protobuf::Any *any = new Any();
     any->ParseFromString(it->value().ToString());
     string typeUrl = any->type_url();
-    //LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
     string typeName = Util::getTypeName(typeUrl);
-    //LOG(INFO) << "Any TypeName=" << typeName << endl;
-    // cout << "Descriptor pool=" << descriptorDB-> << endl;
     if (IsCorrectEntityType(any, request->entitytype()))
     {
       const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
       if (descriptor != nullptr)
       {
-
-        //LOG(INFO) << "Unpack to message " << endl;
         google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
         any->UnpackTo(message);
-        //LOG(INFO) << "Message INFO String=" << message->DebugString() << endl;
-
         if (query.isMatch(descriptor, message))
         {
           propane::PropaneEntity *entity = entities->Add();
@@ -245,16 +220,3 @@ bool DatabaseServiceImpl::IsCorrectEntityType(google::protobuf::Any *any, std::s
   }
   return output;
 }
-
-// string DatabaseServiceImpl::GetDatabaseNameFromContext(grpc::ServerContext* context){
-//   string name = "";
-//   auto map = context->client_metadata();
-//   auto search = map.find("database");
-
-//   if (search != map.end())
-//   {
-//     name = search->second.data() ;
-//   }
-
-//   return name;
-// }

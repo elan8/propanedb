@@ -2,9 +2,7 @@
 
 #include <string>
 #include <glog/logging.h>
-
 #include "Query.h"
-
 
 class QueryParser final
 {

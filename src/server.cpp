@@ -19,11 +19,7 @@ using grpc::ServerContext;
 using grpc::Status;
 using namespace std;
 
-#if defined(OS_WIN)
-std::string kDBPath = "C:\\Windows\\VAR\\rocksdb";
-#else
 std::string kDBPath = "/var/rocksdb";
-#endif
 
 void RunServer()
 {
@@ -36,7 +32,6 @@ void RunServer()
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   LOG(INFO) << "PropaneDB started: Listening on " << server_address << std::endl;
-  //std::cout << "PropaneDB 2 listening on " << server_address << std::endl;
   server->Wait();
 }
 

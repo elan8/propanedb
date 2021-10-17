@@ -17,9 +17,9 @@ void Query::setValue(std::string value)
     queryValue = value;
 }
 
-void Query::setComparisonOperator(ComparisonOperator op){
-    queryOp=op;
-
+void Query::setComparisonOperator(ComparisonOperator op)
+{
+    queryOp = op;
 }
 
 void Query::setError(std::string message)
@@ -41,16 +41,12 @@ std::string Query::getErrorMessage()
 bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message)
 {
     bool output = false;
-    //std::string fieldName = this->fieldName;
-
-    if (queryOp==Query::Star)
+    if (queryOp == Query::Star)
     {
         return true;
     }
-
     const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName(queryName);
     const google::protobuf::Reflection *reflection = message->GetReflection();
-
     google::protobuf::FieldDescriptor::CppType type = fd->cpp_type();
 
     switch (type)
@@ -58,13 +54,11 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
     {
         bool value = reflection->GetBool(*message, fd);
-
         bool desiredValue = false;
         if (queryValue.find("true"))
         {
             desiredValue = true;
         }
-
         if (value == desiredValue)
         {
             output = true;
@@ -85,14 +79,5 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     default:
         break;
     }
-    // if (fd->default_value_bool()){
-    //     bool value = reflection->GetBool(*message, fd);
-    //     if (value==true){
-    //         output=true;
-    //     }
-    // }
-    //string id = reflection->GetString(*message, fd);
-
-    // LOG(INFO) << "isMatch:" <<  << endl;
     return output;
 }
