@@ -14,7 +14,7 @@ Features:
 
 Currently this project is still pre-alpha: not suitable for any practical usage yet.
 
-## Drivers
+## Related projects
 - [Golang driver](https://github.com/elan8/propanedb-go-driver)
 - [Demo](https://github.com/elan8/propanedb-demo)
 

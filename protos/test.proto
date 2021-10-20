@@ -2,9 +2,8 @@ syntax = "proto3";
 option go_package = "propane/";
 package test;
 
-message TodoItem{
+message TestEntity{
     string id = 1;
     string description = 2;
-    bool isDone =3 ;
   }
 
