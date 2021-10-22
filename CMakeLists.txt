@@ -97,6 +97,7 @@ add_library(propane_lib
   ${hw_proto_srcs}
   ${hw_proto_hdrs}
   src/DatabaseServiceImpl.cpp 
+  src/DatabaseImpl.cpp 
   src/QueryParser.cpp 
   src/Query.cpp
   )

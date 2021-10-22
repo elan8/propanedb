@@ -14,10 +14,11 @@
 #include "rocksdb/slice.h"
 #include "rocksdb/options.h"
 #include "propanedb.grpc.pb.h"
-#include "util.h"
+//#include "util.h"
 #include <glog/logging.h>
 
 #include "QueryParser.h"
+#include "DatabaseImpl.h"
 
 using google::protobuf::Any;
 using grpc::Server;
@@ -33,14 +34,8 @@ class DatabaseServiceImpl final : public Database::Service
 {
 private:
     string directory;
-    google::protobuf::SimpleDescriptorDatabase *descriptorDB;
-    const google::protobuf::DescriptorPool *pool ;
-    google::protobuf::DynamicMessageFactory dmf;
-    QueryParser* queryParser;
-    map<string, rocksdb::DB*> databases;
-
-    static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
-    rocksdb::DB* GetDatabase(string name);
+    DatabaseImpl *implementation;
+    Metadata GetMetadata(ServerContext *context);
 
 public:
     DatabaseServiceImpl(string path);
@@ -53,6 +48,6 @@ public:
                         propane::PropaneStatus *reply) override;
     grpc::Status Search(ServerContext *context, const propane::PropaneSearch *request,
                         propane::PropaneEntities *reply) override;
-    grpc::Status CreateDatabase(ServerContext *context, const propane::PropaneDatabase* request,
-                                   propane::PropaneStatus *reply) override;
+    grpc::Status CreateDatabase(ServerContext *context, const propane::PropaneDatabase *request,
+                                propane::PropaneStatus *reply) override;
 };
