@@ -3,12 +3,13 @@ namespace fs = std::filesystem;
 
 #include "DatabaseImpl.h"
 
-DatabaseImpl::DatabaseImpl(string path)
+DatabaseImpl::DatabaseImpl(string path, bool debug)
 {
   directory = path;
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
   queryParser = new QueryParser();
+  this->debug = debug;
 }
 
 DatabaseImpl::~DatabaseImpl()
@@ -22,6 +23,11 @@ DatabaseImpl::~DatabaseImpl()
   delete descriptorDB;
 }
 
+void DatabaseImpl::setDebugMode(bool enabled)
+{
+  debug = enabled;
+}
+
 grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
                                           propane::PropaneStatus *reply)
 {
@@ -32,13 +38,15 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
   {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
+  if (debug)
+  {
+    LOG(INFO) << "CreateDatabase databaseName=" << databaseName << endl;
+  }
 
-  LOG(INFO) << "CreateDatabase databaseName=" << databaseName << endl;
   fs::path p1;
   p1 += directory;
   p1 /= databaseName;
   string path = p1.generic_string();
-  LOG(INFO) << "path=" << path << endl;
 
   google::protobuf::FileDescriptorSet fds = request->descriptor_set();
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
@@ -62,7 +70,10 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
   options.OptimizeLevelStyleCompaction();
   options.create_if_missing = true;
   ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-  LOG(INFO) << "Status code="s << s.ToString() << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Status code="s << s.ToString() << endl;
+  }
   assert(s.ok());
 
   databases[databaseName] = db;
@@ -71,12 +82,14 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
 
 rocksdb::DB *DatabaseImpl::GetDatabase(string name)
 {
-  LOG(INFO) << "GetDatabase" << endl;
+  if (debug)
+  {
+    LOG(INFO) << "GetDatabase" << endl;
+  }
   fs::path p1;
   p1 += directory;
   p1 /= name;
   string path = p1.generic_string();
-  LOG(INFO) << "Database name=" << name << " path=" << path << endl;
 
   if (name.length() == 0)
   {
@@ -87,12 +100,18 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
   DB *db = databases[name];
   if (db == nullptr)
   {
-    LOG(INFO) << "Database pointer = null: opening database" << endl;
+    if (debug)
+    {
+      LOG(INFO) << "Database pointer = null: opening database" << endl;
+    }
     Options options;
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
     ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-    LOG(INFO) << "Status code="s << s.ToString() << endl;
+    if (debug)
+    {
+      LOG(INFO) << "DB Open: Status code="s << s.ToString() << endl;
+    }
     assert(s.ok());
     databases[name] = db;
   }
@@ -103,7 +122,10 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
 grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *request,
                                propane::PropaneId *reply)
 {
-  LOG(INFO) << "Put" << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Put" << endl;
+  }
   string databaseName = metadata->databaseName;
   if (databaseName.length() == 0)
   {
@@ -112,9 +134,7 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
 
   Any any = (request->entity()).data();
   string typeUrl = any.type_url();
-  LOG(INFO) << "Any TypeURL=" << typeUrl << endl;
   string typeName = Util::getTypeName(typeUrl);
-  LOG(INFO) << "Any TypeName=" << typeName << endl;
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor != nullptr)
   {
@@ -127,8 +147,13 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
     {
       id = Util::generateUUID();
       reflection->SetString(message, fd, id);
+      any.PackFrom(*message);
     }
-    LOG(INFO) << "Message ID= " << id << endl;
+    if (debug)
+    {
+      LOG(INFO) << "Entity= " << any.DebugString() << endl;
+    }
+
     string serializedAny;
     any.SerializeToString(&serializedAny);
 
@@ -146,7 +171,10 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
 grpc::Status DatabaseImpl::Get(Metadata *metadata, const propane::PropaneId *request,
                                propane::PropaneEntity *reply)
 {
-  LOG(INFO) << "Get" << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Get" << endl;
+  }
   string databaseName = metadata->databaseName;
   if (databaseName.length() == 0)
   {
@@ -191,7 +219,10 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata, const propane::PropaneId *
 grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSearch *request,
                                   propane::PropaneEntities *reply)
 {
-  LOG(INFO) << "Search" << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Search" << endl;
+  }
   string databaseName = metadata->databaseName;
   if (databaseName.length() == 0)
   {
@@ -204,6 +235,7 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
   if (query.hasError())
   {
     LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Query error:" + query.getErrorMessage());
   }
   reply->clear_entities();
   google::protobuf::RepeatedPtrField<::propane::PropaneEntity> *entities = reply->mutable_entities();
@@ -224,7 +256,10 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
         {
           propane::PropaneEntity *entity = entities->Add();
           entity->set_allocated_data(any);
-          LOG(INFO) << "Search:: Add entity" << endl;
+          if (debug)
+          {
+            LOG(INFO) << "Search:: Add entity" << endl;
+          }
         }
       }
     }
@@ -234,7 +269,6 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
 
 bool DatabaseImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string entityType)
 {
-  LOG(INFO) << "IsCorrectEntityType" << endl;
   bool output = false;
   string typeUrl = any->type_url();
   string typeName = Util::getTypeName(typeUrl);

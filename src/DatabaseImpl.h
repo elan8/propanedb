@@ -43,14 +43,16 @@ private:
     google::protobuf::DynamicMessageFactory dmf;
     QueryParser* queryParser;
     map<string, rocksdb::DB*> databases;
+    bool debug;
 
     static bool IsCorrectEntityType(google::protobuf::Any* any, std::string type );
     rocksdb::DB* GetDatabase(string name);
   
 
 public:
-    DatabaseImpl(string path);
+    DatabaseImpl(string path, bool debug);
     ~DatabaseImpl();
+    void setDebugMode(bool enabled);
     grpc::Status Put(Metadata *metadata, const propane::PropanePut *request,
                      propane::PropaneId *reply) ;
     grpc::Status Get(Metadata *metadata, const propane::PropaneId *request,

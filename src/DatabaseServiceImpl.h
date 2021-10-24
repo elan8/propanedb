@@ -38,7 +38,7 @@ private:
     Metadata GetMetadata(ServerContext *context);
 
 public:
-    DatabaseServiceImpl(string path);
+    DatabaseServiceImpl(string path, bool debug);
     ~DatabaseServiceImpl();
     grpc::Status Put(ServerContext *context, const propane::PropanePut *request,
                      propane::PropaneId *reply) override;

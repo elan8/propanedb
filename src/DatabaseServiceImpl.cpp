@@ -3,10 +3,10 @@ namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.h"
 
-DatabaseServiceImpl::DatabaseServiceImpl(string path)
+DatabaseServiceImpl::DatabaseServiceImpl(string path, bool debug)
 {
   directory = path;
-  implementation = new DatabaseImpl(path);
+  implementation = new DatabaseImpl(path, debug);
 }
 
 DatabaseServiceImpl::~DatabaseServiceImpl()
@@ -25,7 +25,7 @@ Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
     LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
   }
   auto map = context->client_metadata();
-  auto search = map.find("databaseName");
+  auto search = map.find("database-name");
   if (search != map.end())
   {
     metadata.databaseName = (search->second).data();
