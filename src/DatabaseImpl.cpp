@@ -138,10 +138,18 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
   if (descriptor == nullptr)
   {
-    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
+    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor with this type was not found");
   }
   google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
-  any.UnpackTo(message);
+  
+  
+  
+   if (any.UnpackTo(message))
+  {
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Unpack of Any to message failed. Check if the type of this object was registered in the FileDescriptorSet.");
+
+  }
+
   const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
   const google::protobuf::Reflection *reflection = message->GetReflection();
 
