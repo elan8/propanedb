@@ -24,6 +24,5 @@ RUN chmod 777 /app/server *
 USER propane
 EXPOSE 50051
 WORKDIR /app
-RUN ls -la
-COPY docker-prod/supervisord.conf .
+COPY docker/prod/supervisord.conf .
 CMD ["/usr/bin/supervisord"]
