@@ -136,35 +136,39 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
   string typeUrl = any.type_url();
   string typeName = Util::getTypeName(typeUrl);
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
-  if (descriptor != nullptr)
-  {
-    google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
-    any.UnpackTo(message);
-    const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
-    const google::protobuf::Reflection *reflection = message->GetReflection();
-    string id = reflection->GetString(*message, fd);
-    if (id.length() == 0)
-    {
-      id = Util::generateUUID();
-      reflection->SetString(message, fd, id);
-      any.PackFrom(*message);
-    }
-    if (debug)
-    {
-      LOG(INFO) << "Entity= " << any.DebugString() << endl;
-    }
-
-    string serializedAny;
-    any.SerializeToString(&serializedAny);
-
-    ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Put(WriteOptions(), id, serializedAny);
-    assert(s.ok());
-    reply->set_id(id);
-  }
-  else
+  if (descriptor == nullptr)
   {
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
+  google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
+  any.UnpackTo(message);
+  const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
+  const google::protobuf::Reflection *reflection = message->GetReflection();
+
+  if (!reflection->HasField(*message, fd))
+  {
+    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Field wit the name id doesn't exist in this message. This is required for storage in PropaneDB");
+  }
+
+  string id = reflection->GetString(*message, fd);
+  if (id.length() == 0)
+  {
+    id = Util::generateUUID();
+    reflection->SetString(message, fd, id);
+    any.PackFrom(*message);
+  }
+  if (debug)
+  {
+    LOG(INFO) << "Entity= " << any.DebugString() << endl;
+  }
+
+  string serializedAny;
+  any.SerializeToString(&serializedAny);
+
+  ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Put(WriteOptions(), id, serializedAny);
+  assert(s.ok());
+  reply->set_id(id);
+
   return grpc::Status::OK;
 }
 
@@ -228,6 +232,17 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
   {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
+
+  // request->entitytype()
+  // Any any = (request->entity()).data();
+  // string typeUrl = any.type_url();
+  // string typeName = Util::getTypeName(typeUrl);
+  const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName( request->entitytype());
+  if (descriptor == nullptr)
+  {
+    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
+  }
+
 
   ROCKSDB_NAMESPACE::Iterator *it = GetDatabase(databaseName)->NewIterator(ReadOptions());
 
