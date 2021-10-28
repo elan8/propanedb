@@ -29,6 +29,6 @@ jobs:
       - name: Build Docker for production
         run: ./scripts/buildDockerProd.sh
       - name: Tag 
-        run: docker tag ghcr.io/elan8/propanedb ghcr.io/elan8/propanedb:${{ GITHUB_REF }}
+        run: docker tag ghcr.io/elan8/propanedb ghcr.io/elan8/propanedb:${{ env.GITHUB_REF }}
       - name: Push 
-        run: docker push ghcr.io/elan8/propanedb:${{ GITHUB_REF }}
+        run: docker push ghcr.io/elan8/propanedb:${{ env.GITHUB_REF }}
