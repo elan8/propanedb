@@ -28,7 +28,12 @@ jobs:
           password: ${{ secrets.PAT }}
       - name: Build Docker for production
         run: ./scripts/buildDockerProd.sh
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ghcr.io/elan8/propanedb      
       - name: Tag 
-        run: docker tag ghcr.io/elan8/propanedb ghcr.io/elan8/propanedb:${{ env.GITHUB_REF }}
+        run: docker tag ghcr.io/elan8/propanedb ghcr.io/elan8/propanedb:${{ steps.meta.outputs.tags }}
       - name: Push 
-        run: docker push ghcr.io/elan8/propanedb:${{ env.GITHUB_REF }}
+        run: docker push ghcr.io/elan8/propanedb:${{ steps.meta.outputs.tags }}
