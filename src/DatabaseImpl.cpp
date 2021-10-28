@@ -144,7 +144,7 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
   
   
   
-   if (any.UnpackTo(message))
+   if (!any.UnpackTo(message))
   {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Unpack of Any to message failed. Check if the type of this object was registered in the FileDescriptorSet.");
 
