@@ -145,10 +145,7 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
   const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
   const google::protobuf::Reflection *reflection = message->GetReflection();
 
-  if (!reflection->HasField(*message, fd))
-  {
-    return grpc::Status(grpc::StatusCode::NOT_FOUND, "Field wit the name id doesn't exist in this message. This is required for storage in PropaneDB");
-  }
+
 
   string id = reflection->GetString(*message, fd);
   if (id.length() == 0)
