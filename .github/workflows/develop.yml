@@ -25,9 +25,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin      
-      - name: pull image
-        run: docker pull ghcr.io/elan8/propanedb-base-alpine   
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin  &&  docker pull ghcr.io/elan8/propanedb-base-alpine   
       - name: Build Docker for develop
         run: ./scripts/buildDockerDevelop.sh
 
