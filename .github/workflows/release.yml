@@ -39,7 +39,7 @@ jobs:
           DOCKER_BUILDKIT: 0
         with:
           context: .
-          file: ./docker/prod
+          file: ./docker/prod/Dockerfile 
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}          
