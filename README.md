@@ -39,7 +39,7 @@ import (
 ```
 	databaseName := "test"
 	ctx := context.Background()
-  port := "50051"
+        port := "50051"
 
 	b, err := ioutil.ReadFile("../propane/test.bin")
 	if err != nil {
@@ -64,7 +64,7 @@ import (
 	item1.Description = "Test 1"
 	id1, err := client.Put(ctx, item1)
 	if err != nil {
-		t.Fatalf("Error: %s", err)
+		log.Fatalf("Error: %s", err)
 	}
 	log.Print("Id1=" + id1)
 ```
