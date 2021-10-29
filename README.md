@@ -29,6 +29,7 @@ docker run -p=50051:50051  ghcr.io/elan8/propanedb:latest
 import (
 	"context"
 	"log"
+	"io/ioutil"
 
 	"github.com/elan8/propanedb-go-driver/propane"
 	"google.golang.org/protobuf/proto"
