@@ -36,7 +36,7 @@ private:
     string directory;
     DatabaseImpl *implementation;
     Metadata GetMetadata(ServerContext *context);
-
+    bool debug;
 public:
     DatabaseServiceImpl(string path, bool debug);
     ~DatabaseServiceImpl();

@@ -7,6 +7,7 @@ DatabaseServiceImpl::DatabaseServiceImpl(string path, bool debug)
 {
   directory = path;
   implementation = new DatabaseImpl(path, debug);
+  this->debug = debug;
 }
 
 DatabaseServiceImpl::~DatabaseServiceImpl()
@@ -17,19 +18,27 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
 {
   Metadata metadata;
-  LOG(INFO) << "GetMetadata from context:" << endl;
+
   std::multimap<grpc::string_ref, grpc::string_ref> data = context->client_metadata();
-  LOG(INFO) << data.size();
-  for (auto iter = data.begin(); iter != data.end(); ++iter)
+  if (debug)
   {
-    LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
+    LOG(INFO) << "GetMetadata from context:" << endl;
+    LOG(INFO) << data.size();
+    for (auto iter = data.begin(); iter != data.end(); ++iter)
+    {
+      LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
+    }
   }
+
   auto map = context->client_metadata();
   auto search = map.find("database-name");
   if (search != map.end())
   {
     metadata.databaseName = (search->second).data();
-    LOG(INFO) << "databaseName :" << metadata.databaseName;
+    if (debug)
+    {
+      LOG(INFO) << "databaseName :" << metadata.databaseName;
+    }
   }
   return metadata;
 }
