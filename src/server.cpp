@@ -12,7 +12,6 @@
 #include <google/protobuf/dynamic_message.h>
 #include "DatabaseServiceImpl.h"
 
-
 using google::protobuf::Any;
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -21,7 +20,7 @@ using grpc::Status;
 using namespace std;
 
 std::string kDBPath = "/var/rocksdb";
-bool debug = false; 
+bool debug = false;
 
 void RunServer()
 {
@@ -42,14 +41,18 @@ int main(int argc, char **argv)
   google::InitGoogleLogging(argv[0]);
   FLAGS_logtostderr = 1;
 
-  if (std::string("true").compare(std::getenv("DEBUG")) == 0)
+  char* flag = std::getenv("DEBUG");
+  if (flag)
   {
-    LOG(INFO) << "DEBUG MODE ENABLED" << '\n';
-    debug = true;
-  }
-  else
-  {
-    debug = false;
+    if (std::string("true").compare(flag) == 0)
+    {
+      LOG(INFO) << "DEBUG MODE ENABLED" << '\n';
+      debug = true;
+    }
+    else
+    {
+      debug = false;
+    }
   }
 
   RunServer();
