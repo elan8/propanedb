@@ -3,9 +3,9 @@ namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.hpp"
 
-DatabaseServiceImpl::DatabaseServiceImpl(string path, bool debug)
+DatabaseServiceImpl::DatabaseServiceImpl(const string& path, bool debug):   directory (path)
 {
-  directory = path;
+
   implementation = new DatabaseImpl(path, debug);
   this->debug = debug;
 }
