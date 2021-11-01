@@ -1,5 +1,7 @@
 #pragma once
-
+#include <iostream>
+#include <string_view>
+#include <string>
 //#include <google/protobuf/any.pb.h>
 #include <google/protobuf/dynamic_message.h>
 
@@ -27,13 +29,13 @@ private:
     Query::ComparisonOperator queryOp = None;
 
 public:
-    void setName(std::string name);
-    void setValue(std::string value);
+    void setName(const std::string& name);
+    void setValue(const std::string& value);
     void setComparisonOperator(ComparisonOperator);
 
     Query();
     bool hasError();
-    void setError(std::string message);
+    void setError(const std::string& message);
     std::string getErrorMessage();
     bool isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message);
 };

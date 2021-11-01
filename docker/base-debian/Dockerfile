@@ -28,7 +28,6 @@ RUN git clone https://github.com/gflags/gflags.git && \
 
 #install gRPC
 WORKDIR /app/dependencies
-# RUN apk add --update zlib-dev
 RUN git clone -b v1.38.1 https://github.com/grpc/grpc && \
     cd grpc && \
     git submodule update --init && cd /app/dependencies/grpc &&\

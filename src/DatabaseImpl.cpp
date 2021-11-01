@@ -3,9 +3,9 @@ namespace fs = std::filesystem;
 
 #include "DatabaseImpl.hpp"
 
-DatabaseImpl::DatabaseImpl(string path, bool debug)
+DatabaseImpl::DatabaseImpl(const string& path, bool debug): directory(path)
 {
-  directory = path;
+  //directory = path;
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
   queryParser = new QueryParser(debug);

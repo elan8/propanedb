@@ -50,7 +50,7 @@ private:
   
 
 public:
-    DatabaseImpl(string path, bool debug);
+    DatabaseImpl(const string& path, bool debug);
     ~DatabaseImpl();
     void setDebugMode(bool enabled);
     grpc::Status Put(Metadata *metadata, const propane::PropanePut *request,

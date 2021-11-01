@@ -1,18 +1,18 @@
 #include "Query.hpp"
 
-Query::Query()
+Query::Query(): error(false), errorMessage(),queryName(),queryValue()
 {
-    error = false;
-    errorMessage = "";
-    queryName = "";
-    queryValue = "";
+    // error = false;
+    // errorMessage = "";
+    // queryName = "";
+    // queryValue = "";
 }
 
-void Query::setName(std::string name)
+void Query::setName(const std::string& name)
 {
     queryName = name;
 }
-void Query::setValue(std::string value)
+void Query::setValue(const std::string& value)
 {
     queryValue = value;
 }
@@ -22,7 +22,7 @@ void Query::setComparisonOperator(ComparisonOperator op)
     queryOp = op;
 }
 
-void Query::setError(std::string message)
+void Query::setError(const std::string& message)
 {
     error = true;
     errorMessage = message;
@@ -55,7 +55,9 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     {
         bool value = reflection->GetBool(*message, fd);
         bool desiredValue = false;
-        if (queryValue.find("true"))
+ 
+        const std::string& q = queryValue;
+        if ( q.find("true")!=std::string::npos)
         {
             desiredValue = true;
         }
