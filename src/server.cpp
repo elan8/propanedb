@@ -10,7 +10,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <google/protobuf/dynamic_message.h>
-#include "DatabaseServiceImpl.h"
+#include "DatabaseServiceImpl.hpp"
 
 using google::protobuf::Any;
 using grpc::Server;

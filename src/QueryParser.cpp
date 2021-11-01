@@ -1,5 +1,5 @@
-#include "QueryParser.h"
-#include "Query.h"
+#include "QueryParser.hpp"
+#include "Query.hpp"
 #include <tao/pegtl.hpp>
 #include <tao/pegtl/contrib/analyze.hpp>
 #include <tao/pegtl/contrib/trace.hpp>
@@ -134,8 +134,9 @@ namespace application
 
 }
 
-QueryParser::QueryParser()
+QueryParser::QueryParser(bool debug)
 {
+    this->debug = debug;
 }
 
 QueryParser::~QueryParser()
@@ -147,11 +148,17 @@ Query QueryParser::parseQuery(std::string queryString)
     Query query;
     if (analyze<application::grammar>() != 0)
     {
-        LOG(INFO) << "Grammar incorrect" << std::endl;
+        if (debug)
+        {
+            LOG(INFO) << "Grammar incorrect" << std::endl;
+        }
         query.setError("Grammar incorrect");
         return query;
     }
-    LOG(INFO) << "parseQuery: " << queryString << std::endl;
+    if (debug)
+    {
+        LOG(INFO) << "parseQuery: " << queryString << std::endl;
+    }
     memory_input in1(queryString, "");
     tao::pegtl::parse<application::grammar, application::my_action>(in1, query);
     return query;

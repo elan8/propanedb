@@ -1,7 +1,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "DatabaseServiceImpl.h"
+#include "DatabaseServiceImpl.hpp"
 
 DatabaseServiceImpl::DatabaseServiceImpl(string path, bool debug)
 {

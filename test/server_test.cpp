@@ -8,7 +8,7 @@
 #include <streambuf>
 #include <gtest/gtest.h>
 #include "test.pb.h"
-#include "DatabaseImpl.h"
+#include "DatabaseImpl.hpp"
 #include <boost/filesystem.hpp>
 
 using namespace std;

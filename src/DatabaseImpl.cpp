@@ -1,14 +1,14 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "DatabaseImpl.h"
+#include "DatabaseImpl.hpp"
 
 DatabaseImpl::DatabaseImpl(string path, bool debug)
 {
   directory = path;
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
-  queryParser = new QueryParser();
+  queryParser = new QueryParser(debug);
   this->debug = debug;
 }
 

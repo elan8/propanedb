@@ -17,8 +17,8 @@
 //#include "util.h"
 #include <glog/logging.h>
 
-#include "QueryParser.h"
-#include "DatabaseImpl.h"
+#include "QueryParser.hpp"
+#include "DatabaseImpl.hpp"
 
 using google::protobuf::Any;
 using grpc::Server;

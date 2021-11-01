@@ -16,7 +16,7 @@
 #include "propanedb.grpc.pb.h"
 #include "util.h"
 #include <glog/logging.h>
-#include "QueryParser.h"
+#include "QueryParser.hpp"
 
 using google::protobuf::Any;
 using grpc::Server;
