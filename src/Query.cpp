@@ -59,17 +59,108 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
         {
             desiredValue = true;
         }
-        if (value == desiredValue)
+        if (queryOp == Query::Equal)
         {
-            output = true;
+            if (value == desiredValue)
+            {
+                output = true;
+            }
         }
+        else if (queryOp == Query::NotEqual)
+        {
+            if (value != desiredValue)
+            {
+                output = true;
+            }
+        }
+        else
+        {
+            setError("This query operator is not allowed");
+        }
+
         break;
     }
 
     case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
     {
         std::string value = reflection->GetString(*message, fd);
-        if (value.compare(queryValue) == 0)
+        if (queryOp == Query::Equal)
+        {
+            if (value.compare(queryValue) == 0)
+            {
+                output = true;
+            }
+        }
+        else if (queryOp == Query::NotEqual)
+        {
+            if (value.compare(queryValue) != 0)
+            {
+                output = true;
+            }
+        }
+        else
+        {
+            setError("This query operator is not allowed");
+        }
+
+        break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_INT32:
+    {
+        int32_t value = reflection->GetInt32(*message, fd);
+        if (value == strtol(queryValue.c_str(), NULL, 0))
+        {
+            output = true;
+        }
+
+        long v = strtol(queryValue.c_str(), NULL, 0);
+        if (queryOp == Query::Equal)
+        {
+            if (value == v)
+            {
+                output = true;
+            }
+        }
+        else if (queryOp == Query::NotEqual)
+        {
+            if (value != v)
+            {
+                output = true;
+            }
+        }
+        else
+        {
+            setError("This query operator is not allowed");
+        }
+
+        break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_INT64:
+    {
+        int32_t value = reflection->GetInt64(*message, fd);
+        if (value == strtol(queryValue.c_str(), NULL, 0))
+        {
+            output = true;
+        }
+        break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_UINT32:
+    {
+        int32_t value = reflection->GetUInt32(*message, fd);
+        if (value == strtol(queryValue.c_str(), NULL, 0))
+        {
+            output = true;
+        }
+        break;
+    }
+
+    case google::protobuf::FieldDescriptor::TYPE_UINT64:
+    {
+        int32_t value = reflection->GetUInt64(*message, fd);
+        if (value == strtol(queryValue.c_str(), NULL, 0))
         {
             output = true;
         }
@@ -77,7 +168,10 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     }
 
     default:
+    {
+        setError("This field cannot be used in search queries because of its datatype: " + queryName + "(" + fd->type_name() + ")");
         break;
+    }
     }
     return output;
 }
