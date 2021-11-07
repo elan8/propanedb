@@ -109,6 +109,11 @@ TEST_F(PropanedbTest, PutGet)
     EXPECT_EQ(s.ok(), true);
     LOG(INFO) << "Get: any receive: " << reply.data().DebugString() << std::endl;
   }
+
+  {
+    string zipFile ="";
+    db->Backup(&meta,"test",&zipFile);
+  }
 }
 
 

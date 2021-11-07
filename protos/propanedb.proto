@@ -13,6 +13,35 @@ service Database {
   rpc Get (PropaneId) returns (PropaneEntity) {}
   rpc Delete (PropaneId) returns (PropaneStatus) {}
   rpc Search (PropaneSearch) returns (PropaneEntities) {}
+
+  rpc Backup (PropaneBackupRequest) returns (stream PropaneBackupReply) {}
+  rpc Restore (stream PropaneRestoreRequest) returns (PropaneRestoreReply) {}
+}
+
+message PropaneFileChunk{
+  bytes data =1;
+}
+message PropaneFileHeader{
+  string databaseName = 1;
+}
+message PropaneBackupRequest{
+  string databaseName = 1;
+}
+message PropaneRestoreRequest{
+  oneof contents {
+    PropaneFileHeader header = 1;
+    PropaneFileChunk chunk = 2;
+  }
+}
+message PropaneBackupReply{
+  oneof contents {
+    uint64 bytesReceived = 1;
+    PropaneFileChunk chunk = 2;
+  }
+}
+
+message PropaneRestoreReply{
+  string databaseName = 1;
 }
 
 message PropaneDatabase{

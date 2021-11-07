@@ -1,11 +1,12 @@
 #include <filesystem>
 namespace fs = std::filesystem;
+#include "rocksdb/db.h"
+#include "rocksdb/utilities/backupable_db.h"
 
 #include "DatabaseImpl.hpp"
 
-DatabaseImpl::DatabaseImpl(const string& path, bool debug): directory(path)
+DatabaseImpl::DatabaseImpl(const string &path, bool debug) : databasePath(path), backupPath("/tmp/rocksdb_backup")
 {
-  //directory = path;
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
   queryParser = new QueryParser(debug);
@@ -44,7 +45,7 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
   }
 
   fs::path p1;
-  p1 += directory;
+  p1 += databasePath;
   p1 /= databaseName;
   string path = p1.generic_string();
 
@@ -87,7 +88,7 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
     LOG(INFO) << "GetDatabase" << endl;
   }
   fs::path p1;
-  p1 += directory;
+  p1 += databasePath;
   p1 /= name;
   string path = p1.generic_string();
 
@@ -141,19 +142,14 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata, const propane::PropanePut *re
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor with this type was not found");
   }
   google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
-  
-  
-  
-   if (!any.UnpackTo(message))
+
+  if (!any.UnpackTo(message))
   {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Unpack of Any to message failed. Check if the type of this object was registered in the FileDescriptorSet.");
-
   }
 
   const google::protobuf::FieldDescriptor *fd = descriptor->FindFieldByName("id");
   const google::protobuf::Reflection *reflection = message->GetReflection();
-
-
 
   string id = reflection->GetString(*message, fd);
   if (id.length() == 0)
@@ -242,12 +238,11 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
   // Any any = (request->entity()).data();
   // string typeUrl = any.type_url();
   // string typeName = Util::getTypeName(typeUrl);
-  const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName( request->entitytype());
+  const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(request->entitytype());
   if (descriptor == nullptr)
   {
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
-
 
   ROCKSDB_NAMESPACE::Iterator *it = GetDatabase(databaseName)->NewIterator(ReadOptions());
 
@@ -297,4 +292,44 @@ bool DatabaseImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string e
     output = true;
   }
   return output;
+}
+
+grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName, string *zipFilePath)
+{
+
+
+  BackupEngine *backup_engine;
+  backup_engine->PurgeOldBackups(0);
+  rocksdb::Status s = BackupEngine::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
+  assert(s.ok());
+  rocksdb::DB *db = GetDatabase(databaseName);
+
+  s = backup_engine->CreateNewBackup(db);
+  assert(s.ok());
+
+  std::vector<BackupInfo> backup_info;
+  backup_engine->GetBackupInfo(&backup_info, true);
+
+  LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
+
+
+
+  delete backup_engine;
+  //TODO: write to ZIP file
+
+  return grpc::Status::OK;
+}
+
+grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
+{
+  //TODO: unzip file to RocksDB backup path
+
+  BackupEngineReadOnly *backup_engine;
+  rocksdb::Status s = BackupEngineReadOnly::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
+  assert(s.ok());
+  s = backup_engine->RestoreDBFromBackup(1 , databasePath, databasePath);
+  assert(s.ok());
+  delete backup_engine;
+
+  return grpc::Status::OK;
 }
