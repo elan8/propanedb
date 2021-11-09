@@ -111,8 +111,9 @@ TEST_F(PropanedbTest, PutGet)
   }
 
   {
-    string zipFile ="";
-    db->Backup(&meta,"test",&zipFile);
+    string zipFile ="test.zip";
+    db->Backup(&meta,"test",zipFile);
+    db->Restore(&meta,"test",zipFile);
   }
 }
 

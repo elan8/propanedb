@@ -85,4 +85,4 @@ cd ..
 wget https://pocoproject.org/releases/poco-1.11.1/poco-1.11.1-all.tar.gz 
 tar -xzf poco-1.11.1-all.tar.gz 
 cd poco-1.11.1-all 
-mkdir build-cmake && cd build-cmake && cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && cmake --build .
+mkdir build-cmake && cd build-cmake && cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release  && make install

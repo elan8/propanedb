@@ -66,4 +66,4 @@ make install && cd /app/dependencies && rm -R PEGTL-3.2.0 && rm 3.2.0.tar.gz
 WORKDIR /app/dependencies
 #RUN git clone -b master https://github.com/pocoproject/poco.git && \
 RUN wget https://pocoproject.org/releases/poco-1.11.1/poco-1.11.1-all.tar.gz && tar -xzf poco-1.11.1-all.tar.gz && \
-cd poco-1.11.1-all && mkdir build-cmake && cd build-cmake && cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ && cmake --build .
+cd poco-1.11.1-all && mkdir build-cmake && cd build-cmake && cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release  && make install

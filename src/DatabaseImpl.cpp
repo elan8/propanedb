@@ -1,7 +1,12 @@
 #include <filesystem>
+#include <fstream>
 namespace fs = std::filesystem;
 #include "rocksdb/db.h"
 #include "rocksdb/utilities/backupable_db.h"
+#include "Poco/Zip/Compress.h"
+#include "Poco/Zip/Decompress.h"
+
+#include "Poco/Delegate.h"
 
 #include "DatabaseImpl.hpp"
 
@@ -294,12 +299,11 @@ bool DatabaseImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string e
   return output;
 }
 
-grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName, string *zipFilePath)
+grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName, string zipFilePath)
 {
 
-
   BackupEngine *backup_engine;
- 
+
   rocksdb::Status s = BackupEngine::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
   assert(s.ok());
   backup_engine->PurgeOldBackups(0);
@@ -314,23 +318,63 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
   LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
 
-
-
-  delete backup_engine;
   //TODO: write to ZIP file
+  //string backupFile = "test.zip";
+  //zipFilePath = &backupFile;
+  std::ofstream out(zipFilePath, std::ios::binary);
+  Poco::Zip::Compress c(out, true);
+  Poco::Path backupDir(backupPath);
+  c.addRecursive(backupDir);
+  //c.addFile(aFile, "hello.txt");
+  //c.addFile(theFile, theFile);
+  c.close(); // MUST be done to finalize the Zip file
+
+  backup_engine->PurgeOldBackups(0);
+  delete backup_engine;
 
   return grpc::Status::OK;
 }
 
+void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string> &info)
+{
+  // inform user about error
+  //[...]
+}
+
 grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
 {
+  LOG(INFO) << "Restore: filepath=" << zipFilePath;
   //TODO: unzip file to RocksDB backup path
+  std::ifstream inp(zipFilePath, std::ios::binary);
+  poco_assert(inp);
+  // decompress to current working dir
+  Poco::Zip::Decompress dec(inp, Poco::Path(backupPath));
+  // if an error happens invoke the ZipTest::onDecompressError method
+  dec.EError += Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
+  dec.decompressAllFiles();
+  dec.EError -= Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
 
   BackupEngineReadOnly *backup_engine;
   rocksdb::Status s = BackupEngineReadOnly::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
-  assert(s.ok());
-  s = backup_engine->RestoreDBFromBackup(1 , databasePath, databasePath);
-  assert(s.ok());
+  if(!s.ok()){
+    LOG(FATAL) << "Error:" << s.ToString();
+  }
+  //assert(s.ok());
+  BackupInfo info;
+  s = backup_engine->GetLatestBackupInfo(&info, false);
+  if (s.IsNotFound())
+  {
+    LOG(INFO) << "No backup found, so nothing to restore";
+  }
+  else
+  {
+    s = backup_engine->RestoreDBFromLatestBackup(databasePath, databasePath);
+    if (!s.ok())
+    {
+      LOG(FATAL) << "Error: " << s.ToString();
+      return grpc::Status::CANCELLED;
+    }
+  }
   delete backup_engine;
 
   return grpc::Status::OK;

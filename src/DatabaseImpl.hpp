@@ -17,6 +17,7 @@
 #include "util.h"
 #include <glog/logging.h>
 #include "QueryParser.hpp"
+#include "Poco/Zip/ZipLocalFileHeader.h"
 
 using google::protobuf::Any;
 using grpc::Server;
@@ -47,6 +48,7 @@ private:
 
     static bool IsCorrectEntityType(google::protobuf::Any *any, std::string type);
     rocksdb::DB *GetDatabase(string name);
+    void onDecompressError(const void* pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>& info);
 
 public:
     DatabaseImpl(const string &path, bool debug);
@@ -63,6 +65,6 @@ public:
     grpc::Status CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
                                 propane::PropaneStatus *reply);
 
-    grpc::Status Backup(Metadata *metadata, const string databaseName, string *zipFilePath);
+    grpc::Status Backup(Metadata *metadata, const string databaseName, string zipFilePath);
     grpc::Status Restore(Metadata *metadata, const string databaseName, string zipFilePath);
 };

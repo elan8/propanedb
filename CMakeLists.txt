@@ -110,6 +110,8 @@ target_link_libraries(propane_lib
   ${Protobuf_LIBRARIES} 
   glog::glog
   taocpp::pegtl
+  PocoFoundation
+  PocoZip
   )
 
 
