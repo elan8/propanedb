@@ -299,9 +299,11 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
 
   BackupEngine *backup_engine;
-  backup_engine->PurgeOldBackups(0);
+ 
   rocksdb::Status s = BackupEngine::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
   assert(s.ok());
+  backup_engine->PurgeOldBackups(0);
+
   rocksdb::DB *db = GetDatabase(databaseName);
 
   s = backup_engine->CreateNewBackup(db);
