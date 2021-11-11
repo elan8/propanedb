@@ -51,7 +51,7 @@ private:
     void onDecompressError(const void* pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>& info);
 
 public:
-    DatabaseImpl(const string &path, bool debug);
+    DatabaseImpl(const string &databasePath, const string &backupPath,bool debug) ;
     ~DatabaseImpl();
     void setDebugMode(bool enabled);
     grpc::Status Put(Metadata *metadata, const propane::PropanePut *request,

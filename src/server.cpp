@@ -19,13 +19,14 @@ using grpc::ServerContext;
 using grpc::Status;
 using namespace std;
 
-std::string kDBPath = "/var/rocksdb";
+std::string databasePath = "/var/rocksdb";
+std::string backupPath = "/tmp/rocksdb_backup";
 bool debug = false;
 
 void RunServer()
 {
   std::string server_address("0.0.0.0:50051");
-  DatabaseServiceImpl service(kDBPath, debug);
+  DatabaseServiceImpl service(databasePath, backupPath,debug);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;

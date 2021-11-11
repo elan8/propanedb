@@ -43,7 +43,7 @@ protected:
     {
        LOG(INFO) << "Error: " << e.what() << std::endl;
     }
-    db = new DatabaseImpl(dir, true);
+    db = new DatabaseImpl(dir, dir, true);
   }
 
   void TearDown() override

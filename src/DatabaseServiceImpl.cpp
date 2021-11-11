@@ -3,10 +3,10 @@ namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.hpp"
 
-DatabaseServiceImpl::DatabaseServiceImpl(const string& path, bool debug):   directory (path)
+DatabaseServiceImpl::DatabaseServiceImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
 {
 
-  implementation = new DatabaseImpl(path, debug);
+  implementation = new DatabaseImpl(databasePath, backupPath, debug);
   this->debug = debug;
 }
 
@@ -76,4 +76,48 @@ grpc::Status DatabaseServiceImpl::Search(ServerContext *context, const propane::
 {
   Metadata meta = this->GetMetadata(context);
   return implementation->Search(&meta, request, reply);
+}
+
+grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane::PropaneBackupRequest *request,
+                                         ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer)
+{
+  Metadata meta = this->GetMetadata(context);
+  string databaseName = request->databasename();
+  string zipFilePath = databasePath + "/" + databaseName + ".zip";
+  implementation->Backup(&meta, databaseName, zipFilePath);
+
+  //TODO: upload contents of the ZIP file as chunks of bytes in a stream
+
+  return grpc::Status::OK;
+}
+grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
+                                          ::propane::PropaneRestoreReply *response)
+{
+
+  //  propane::PropaneRestoreRequest contentPart;
+  //       SequentialFileWriter writer;
+  //       while (reader->Read(&contentPart)) {
+  //           try {
+  //               // FIXME: Do something reasonable if a file with a different name but the same ID already exists
+  //               writer.OpenIfNecessary(contentPart.name());
+  //               auto* const data = contentPart.mutable_content();
+  //               writer.Write(*data);
+
+  //               //summary->set_id(contentPart.id());
+  //               // FIXME: Protect from concurrent access by multiple threads
+  //               //m_FileIdToName[contentPart.id()] = contentPart.name();
+  //           }
+  //           catch (const std::system_error& ex) {
+  //               const auto status_code = writer.NoSpaceLeft() ? grpc::StatusCode::RESOURCE_EXHAUSTED : grpc::StatusCode::ABORTED;
+  //               return grpc::Status(status_code, ex.what());
+  //           }
+  //       }
+
+  //TODO: Assemble ZIP file from chunks of data
+  Metadata meta = this->GetMetadata(context);
+  string databaseName = "";
+  string zipFilePath = databasePath + "/" + databaseName + ".zip";
+  implementation->Restore(&meta, databasePath, zipFilePath);
+
+  return grpc::Status::OK;
 }
