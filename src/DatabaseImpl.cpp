@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 #include "DatabaseImpl.hpp"
 
-DatabaseImpl::DatabaseImpl(const string &path, bool debug) : databasePath(path), backupPath("/tmp/rocksdb_backup")
+DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath,bool debug) : databasePath(databasePath), backupPath(backupPath)
 {
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
