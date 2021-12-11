@@ -152,4 +152,4 @@ target_link_libraries(
   ${Protobuf_LIBRARIES})
 
 include(GoogleTest)
-gtest_discover_tests(propane_test)
+gtest_discover_tests(propane_test PROPERTIES TIMEOUT 600)
