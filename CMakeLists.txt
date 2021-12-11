@@ -100,6 +100,8 @@ add_library(propane_lib
   src/DatabaseImpl.cpp 
   src/QueryParser.cpp 
   src/Query.cpp
+  src/FileWriter.cpp 
+  src/FileReader.cpp
   )
   add_dependencies(propane_lib protoGenerate)
 target_link_libraries(propane_lib
