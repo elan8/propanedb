@@ -42,8 +42,11 @@ namespace {
     };
 };  // Anonymous namespace
 
-FileReader::FileReader(const std::string& file_name)
-    : m_file_path(file_name)
+
+FileReader::~FileReader(){}
+
+FileReader::FileReader(const std::string& file_name, ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer)
+    : m_file_path(file_name), mp_writer(writer)
     , m_data(nullptr)
     , m_size(0)
 {
@@ -109,7 +112,15 @@ void FileReader::Read(size_t max_chunk_size)
     }
 }
 
+ void FileReader::OnChunkAvailable(const void* data, size_t size)
+    {
+        propane::PropaneBackupReply reply;
+        propane::PropaneFileChunk* chunk = new propane::PropaneFileChunk();
+        chunk->set_data(data,size);
+        reply.set_allocated_chunk(chunk);
 
-FileReader::FileReader(FileReader&&) = default;
-FileReader& FileReader::operator=(FileReader&&) = default;
-FileReader::~FileReader() = default;
+        if (! mp_writer->Write(reply)) {
+            //raise_from_system_error_code("The server aborted the connection.", ECONNRESET);
+        }
+    }
+

@@ -13,8 +13,7 @@ FileWriter::FileWriter()
 {
 }
 
-FileWriter::FileWriter(FileWriter&&) = default;
-FileWriter& FileWriter::operator=(FileWriter&&) = default;
+
 
 // Currently the implementation is very simple using standard library facilities. More advanced implementations
 // allowing for better parallelism are possible, e.g. using aio_write().

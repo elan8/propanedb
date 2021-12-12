@@ -5,13 +5,20 @@
 #include <memory>
 #include <functional>
 
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <google/protobuf/dynamic_message.h>
+
+#include "propanedb.grpc.pb.h"
+
 // Read a file using using mmap(). Attempt to overlap reads of the file and writes by the user's code
 // by reading the next segment 
 
 class FileReader {
 public:
-    FileReader(FileReader&&);
-    FileReader& operator=(FileReader&&);
+    FileReader(const std::string& file_name, ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer );
+    //FileReader& operator=(FileReader&&);
     ~FileReader();
 
     // TODO: Provide some way to log non-critical errors which don't prevent the actual reading
@@ -26,17 +33,14 @@ public:
         return m_file_path;
     }
 
-protected:
-    // Constructor. Attempts to open the file, and throws std::system_error if it fails to do so.
-    FileReader(const std::string& file_name);
-
-    // TODO: Also provide a constructor that doesn't open the file, and a separate Open method.
-
-    // OnChunkAvailable: The user needs to override this function to get called when data become available.
-    virtual void OnChunkAvailable(const void* data, size_t size) = 0;
+    void OnChunkAvailable(const void* data, size_t size) ;
 
 private:
     std::string m_file_path;
     std::unique_ptr< const std::uint8_t, std::function<void(const std::uint8_t*)> > m_data;
     size_t m_size;
+
+    ::grpc::ServerWriter<::propane::PropaneBackupReply> *mp_writer;
+    std::uint32_t m_id;
+
 };

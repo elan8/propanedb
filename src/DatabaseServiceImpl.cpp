@@ -2,6 +2,7 @@
 namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.hpp"
+#include "FileReader.hpp"
 
 DatabaseServiceImpl::DatabaseServiceImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
 {
@@ -87,6 +88,7 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
   implementation->Backup(&meta, databaseName, zipFilePath);
 
   //TODO: upload contents of the ZIP file as chunks of bytes in a stream
+  FileReader reader(zipFilePath, writer);
 
   return grpc::Status::OK;
 }
