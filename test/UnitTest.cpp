@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <fstream>
 #include <streambuf>
 #include <gtest/gtest.h>
 #include "test.pb.h"
@@ -13,16 +12,16 @@
 
 using namespace std;
 
-class PropanedbTest : public ::testing::Test
+class UnitTest : public ::testing::Test
 {
 protected:
 
-  PropanedbTest()
+  UnitTest()
   {
     // You can do set-up work for each test here.
   }
 
-  ~PropanedbTest() override
+  ~UnitTest() override
   {
     // You can do clean-up work that doesn't throw exceptions here.
   }
@@ -54,7 +53,7 @@ protected:
   DatabaseImpl *db;
 };
 
-TEST_F(PropanedbTest, PutGet)
+TEST_F(UnitTest, PutGet)
 {
   std::string id;
 

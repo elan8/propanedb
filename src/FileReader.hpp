@@ -4,11 +4,9 @@
 #include <cstdint>
 #include <memory>
 #include <functional>
+#include <ostream>
 
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/health_check_service_interface.h>
-#include <google/protobuf/dynamic_message.h>
+#include <glog/logging.h>
 
 #include "propanedb.grpc.pb.h"
 

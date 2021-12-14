@@ -126,7 +126,7 @@ gRPC::grpc++_reflection
   gRPC::grpc++
   ${Protobuf_LIBRARIES})  
 
-add_executable(server src/server.cpp  )
+add_executable(server src/Server.cpp  )
 add_dependencies(server propane_lib)
 target_link_libraries(server 
 propane_lib
@@ -137,12 +137,30 @@ ${Protobuf_LIBRARIES})
 enable_testing()
 
 add_executable(
-  propane_test
-  test/server_test.cpp
+  unitTest
+  test/UnitTest.cpp
 )
-add_dependencies(propane_test propane_lib test_proto)
+add_dependencies(unitTest propane_lib test_proto)
 target_link_libraries(
-  propane_test
+  unitTest
+  gtest_main
+  rocksdb 
+  pthread 
+  propane_lib
+  test_proto
+  Boost::filesystem
+  gRPC::grpc++_reflection
+  gRPC::grpc++
+  ${Protobuf_LIBRARIES})
+
+add_executable(
+  systemTest
+  test/SystemTest.cpp
+  src/Client.cpp
+)
+add_dependencies(systemTest propane_lib test_proto)
+target_link_libraries(
+  systemTest
   gtest_main
   rocksdb 
   pthread 
@@ -154,4 +172,5 @@ target_link_libraries(
   ${Protobuf_LIBRARIES})
 
 include(GoogleTest)
-gtest_discover_tests(propane_test PROPERTIES TIMEOUT 600)
+gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600)
+gtest_discover_tests(systemTest PROPERTIES TIMEOUT 600)

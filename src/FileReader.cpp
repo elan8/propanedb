@@ -53,6 +53,7 @@ FileReader::FileReader(const std::string& file_name, ::grpc::ServerWriter<::prop
     int fd = open(file_name.c_str(), O_RDONLY);
     if (-1 == fd) {
         //raise_from_errno("Failed to open file.");
+        LOG(ERROR) << "Failed to open file: " << file_name.c_str() << std::endl;
     }
 
     // Ensure that fd will be closed if this method aborts at any point
@@ -62,6 +63,7 @@ FileReader::FileReader(const std::string& file_name, ::grpc::ServerWriter<::prop
     int rc = fstat(fd, &st);
     if (-1 == rc) {
         //raise_from_errno("Failed to read file size.");
+        LOG(ERROR) << "Failed to read file size." << std::endl;
     }
     m_size = st.st_size;
     if (m_size > 0) {
@@ -69,6 +71,7 @@ FileReader::FileReader(const std::string& file_name, ::grpc::ServerWriter<::prop
         void* const mapping = mmap(0, m_size, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
         if (MAP_FAILED == mapping) {
             //raise_from_errno("Failed to map the file into memory.");
+                    LOG(ERROR) << "Failed to map the file into memory." << std::endl;
         }
 
         // Close the file descriptor, and protect the newly acquired memory mapping inside an object
@@ -85,10 +88,12 @@ FileReader::FileReader(const std::string& file_name, ::grpc::ServerWriter<::prop
 
 void FileReader::Read(size_t max_chunk_size)
 {
+            LOG(INFO) << "FileReader::Read" << std::endl;
     size_t bytes_read = 0;
 
     // Handle empty files. Note that m_data will likely be null, so we take care not to access it.
     if (0 == m_size) {
+        LOG(INFO) << "Read: Empty file." << std::endl;
         OnChunkAvailable("", 0);
         return;
     }
@@ -100,7 +105,7 @@ void FileReader::Read(size_t max_chunk_size)
         // read, by using posix_madvise() to give the advice POSIX_MADV_WILLNEED for the following
         // max_chunk_size bytes after the ones we are about to read now. Hopefully by the time
         // we need them, they'll be in the cache.
-
+       LOG(INFO) << "Read: OnChunkAvailable." << std::endl;
         OnChunkAvailable(m_data.get() + bytes_read, bytes_to_read);
 
         // If we implemented the optimisation suggested above, now would be the time to set the
@@ -114,6 +119,7 @@ void FileReader::Read(size_t max_chunk_size)
 
  void FileReader::OnChunkAvailable(const void* data, size_t size)
     {
+          LOG(INFO) << "OnChunkAvailable: "<< size << " bytes" << std::endl;
         propane::PropaneBackupReply reply;
         propane::PropaneFileChunk* chunk = new propane::PropaneFileChunk();
         chunk->set_data(data,size);
@@ -121,6 +127,7 @@ void FileReader::Read(size_t max_chunk_size)
 
         if (! mp_writer->Write(reply)) {
             //raise_from_system_error_code("The server aborted the connection.", ECONNRESET);
+               LOG(ERROR) << "The server aborted the connection: " << std::endl;
         }
     }
 

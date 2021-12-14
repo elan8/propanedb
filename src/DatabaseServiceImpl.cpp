@@ -3,6 +3,7 @@ namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.hpp"
 #include "FileReader.hpp"
+#include "FileWriter.hpp"
 
 DatabaseServiceImpl::DatabaseServiceImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
 {
@@ -90,11 +91,16 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
   //TODO: upload contents of the ZIP file as chunks of bytes in a stream
   FileReader reader(zipFilePath, writer);
 
+  const size_t chunk_size = 1UL << 20; // Hardcoded to 1MB, which seems to be recommended from experience.
+  reader.Read(chunk_size);
+
   return grpc::Status::OK;
 }
 grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
                                           ::propane::PropaneRestoreReply *response)
 {
+
+  FileWriter writer;
 
   //  propane::PropaneRestoreRequest contentPart;
   //       SequentialFileWriter writer;
@@ -119,6 +125,17 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
   Metadata meta = this->GetMetadata(context);
   string databaseName = "";
   string zipFilePath = databasePath + "/" + databaseName + ".zip";
+
+  writer.OpenIfNecessary(zipFilePath);
+
+  propane::PropaneRestoreRequest contentPart;
+  //       SequentialFileWriter writer;
+  while (reader->Read(&contentPart))
+  {
+   auto d = contentPart.chunk().data();
+    writer.Write(d);
+  }
+
   implementation->Restore(&meta, databasePath, zipFilePath);
 
   return grpc::Status::OK;

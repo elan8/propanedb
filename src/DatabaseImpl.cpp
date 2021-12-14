@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 #include "DatabaseImpl.hpp"
 
-DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath,bool debug) : databasePath(databasePath), backupPath(backupPath)
+DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
 {
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
@@ -56,6 +56,11 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
 
   google::protobuf::FileDescriptorSet fds = request->descriptor_set();
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+  if (fds.file_size() == 0)
+  {
+    LOG(ERROR) << "FileDescriptorSet is empty" << endl;
+    return grpc::Status(grpc::StatusCode::INTERNAL, "FileDescriptorSet is empty");
+  }
 
   auto file = fds.file();
   for (auto it = file.begin(); it != file.end(); ++it)
@@ -68,6 +73,7 @@ grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::Pro
   bool databaseExists = fs::exists(path);
   if (db != nullptr || databaseExists)
   {
+    LOG(ERROR) << "Database exists:" << path << endl;
     return grpc::Status(grpc::StatusCode::ALREADY_EXISTS, "A database with this name already exists");
   }
 
@@ -356,7 +362,8 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
 
   BackupEngineReadOnly *backup_engine;
   rocksdb::Status s = BackupEngineReadOnly::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
-  if(!s.ok()){
+  if (!s.ok())
+  {
     LOG(FATAL) << "Error:" << s.ToString();
   }
   //assert(s.ok());
