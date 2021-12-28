@@ -199,6 +199,9 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata, const propane::PropaneId *req
 
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Get(ReadOptions(), request->id(), &serializedAny);
+  if (!s.ok()){
+    return grpc::Status(grpc::StatusCode::INTERNAL, s.ToString());
+  }
   google::protobuf::Any *any = new Any();
   any->ParseFromString(serializedAny);
   reply->set_allocated_data(any);
@@ -324,9 +327,11 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
   LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
 
-  //TODO: write to ZIP file
-  //string backupFile = "test.zip";
-  //zipFilePath = &backupFile;
+  //   if (remove(zipFilePath.c_str()) != 0)
+  // {
+  //   LOG(INFO) << "Error deleting file" << endl;
+  // }
+
   std::ofstream out(zipFilePath, std::ios::binary);
   Poco::Zip::Compress c(out, true);
   Poco::Path backupDir(backupPath);

@@ -25,34 +25,23 @@ class SystemTest : public ::testing::Test
 protected:
   SystemTest()
   {
-    // You can do set-up work for each test here.
-
+    LOG(INFO) << "SystemTest: Set up" << std::endl;
     std::string dir("/var/rocksdb/test");
     try
     {
       if (boost::filesystem::exists(dir))
       {
-          LOG(INFO) << "Remove folder : /var/rocksdb/test" << std::endl;
+        LOG(INFO) << "Remove folder : /var/rocksdb/test" << std::endl;
         boost::filesystem::remove_all(dir);
       }
-      //boost::filesystem::create_directory(dir);
     }
     catch (boost::filesystem::filesystem_error const &e)
     {
       LOG(INFO) << "Error: " << e.what() << std::endl;
     }
 
-  LOG(INFO) << "SystemTest: SetUp" << std::endl;
-    //char *cmd = (char *)"./server";
-    //char *arg[] = {NULL};
-
     string program_name("server");
-    //string argument("debug");
-    char *envp[] =
-        {
-            (char *)"DEBUG=true",
-
-            0};
+    char *envp[] = {(char *)"DEBUG=true", 0};
     char *arg_list[] = {program_name.data(), nullptr};
 
     if (!exists(program_name))
@@ -70,7 +59,6 @@ protected:
     else if (child_pid > 0)
     {
       cout << "spawn child with pid - " << child_pid << endl;
-      //return child_pid;
     }
     else
     {
@@ -84,13 +72,12 @@ protected:
     auto target_str = "0.0.0.0:50051";
     client = new Client(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
     LOG(INFO) << "SystemTest: Client created" << std::endl;
-
   }
 
   ~SystemTest() override
   {
     // You can do clean-up work that doesn't throw exceptions here.
-        LOG(INFO) << "SystemTest: TearDown" << std::endl;
+    LOG(INFO) << "SystemTest: Stop server" << std::endl;
     std::cout << "Killing child pid: " << child_pid << std::endl;
     kill(child_pid, SIGKILL);
     delete client;
@@ -98,13 +85,10 @@ protected:
 
   void SetUp() override
   {
-
-  
   }
 
   void TearDown() override
   {
-
   }
 
   pid_t child_pid;
@@ -113,26 +97,54 @@ protected:
 
 TEST_F(SystemTest, BackupRestore)
 {
-  std::string databaseName = "test";
+
   LOG(INFO) << "SystemTest: Create database" << std::endl;
-  auto status = client->CreateDatabase(databaseName);
+  auto status = client->CreateDatabase();
+
+  std::string id;
+
+  test::TestEntity item;
+  string description("Test1");
+  item.set_description(description);
+
+  status = client->Put(item, &id);
+  LOG(INFO) << "SystemTest: ID=" << id << std::endl;
+
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Get" << std::endl;
+    test::TestEntity item2;
+    status = client->Get(id, &item2);
+    EXPECT_EQ(item2.description(), "Test1");
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
 
   if (status.ok())
   {
     LOG(INFO) << "SystemTest: Backup" << std::endl;
-    client->Backup(databaseName);
+    status = client->Backup();
   }
   else
   {
+    EXPECT_EQ(status.ok(), true);
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-  //     //grpc::ClientContext context;
-  //    // ClientContext context;
-  //    //auto stub_ = propane::Database::NewStub()
-
-  //     // Here we can use the stub's newly available method we just added.
-  //     //grpc::Status status = stub_->SayHelloAgain(&context, request, &reply);
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Restore" << std::endl;
+    status = client->Restore();
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
 }
 
 int main(int argc, char **argv)

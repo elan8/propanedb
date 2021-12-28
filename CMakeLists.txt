@@ -101,7 +101,7 @@ add_library(propane_lib
   src/QueryParser.cpp 
   src/Query.cpp
   src/FileWriter.cpp 
-  src/FileReader.cpp
+  
   )
   add_dependencies(propane_lib protoGenerate)
 target_link_libraries(propane_lib
@@ -127,9 +127,10 @@ gRPC::grpc++_reflection
   ${Protobuf_LIBRARIES})  
 
 add_executable(server src/Server.cpp  )
-add_dependencies(server propane_lib)
+add_dependencies(server propane_lib test_proto)
 target_link_libraries(server 
 propane_lib
+test_proto
 gRPC::grpc++_reflection
 gRPC::grpc++
 ${Protobuf_LIBRARIES})
@@ -156,7 +157,7 @@ target_link_libraries(
 add_executable(
   systemTest
   test/SystemTest.cpp
-  src/Client.cpp
+  test/Client.cpp
 )
 add_dependencies(systemTest propane_lib test_proto)
 target_link_libraries(

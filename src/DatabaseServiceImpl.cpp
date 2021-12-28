@@ -1,8 +1,9 @@
 #include <filesystem>
+#include <cstdio>
 namespace fs = std::filesystem;
 
 #include "DatabaseServiceImpl.hpp"
-#include "FileReader.hpp"
+#include "BackupReader.hpp"
 #include "FileWriter.hpp"
 
 DatabaseServiceImpl::DatabaseServiceImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
@@ -36,7 +37,9 @@ Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
   auto search = map.find("database-name");
   if (search != map.end())
   {
-    metadata.databaseName = (search->second).data();
+    const char * data = (search->second).data();
+    LOG(INFO) << "length= " << (search->second).length();
+    metadata.databaseName = std::string(data, (search->second).length() );
     if (debug)
     {
       LOG(INFO) << "databaseName :" << metadata.databaseName;
@@ -89,10 +92,16 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
   implementation->Backup(&meta, databaseName, zipFilePath);
 
   //TODO: upload contents of the ZIP file as chunks of bytes in a stream
-  FileReader reader(zipFilePath, writer);
+  BackupReader reader(zipFilePath, writer);
+  //FileReader<propane::PropaneBackupReply> reader(zipFilePath, writer);
 
   const size_t chunk_size = 1UL << 20; // Hardcoded to 1MB, which seems to be recommended from experience.
   reader.Read(chunk_size);
+
+  if (remove(zipFilePath.c_str()) != 0)
+  {
+    LOG(INFO) << "Error deleting file" << endl;
+  }
 
   return grpc::Status::OK;
 }
@@ -102,39 +111,32 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
 
   FileWriter writer;
 
-  //  propane::PropaneRestoreRequest contentPart;
-  //       SequentialFileWriter writer;
-  //       while (reader->Read(&contentPart)) {
-  //           try {
-  //               // FIXME: Do something reasonable if a file with a different name but the same ID already exists
-  //               writer.OpenIfNecessary(contentPart.name());
-  //               auto* const data = contentPart.mutable_content();
-  //               writer.Write(*data);
-
-  //               //summary->set_id(contentPart.id());
-  //               // FIXME: Protect from concurrent access by multiple threads
-  //               //m_FileIdToName[contentPart.id()] = contentPart.name();
-  //           }
-  //           catch (const std::system_error& ex) {
-  //               const auto status_code = writer.NoSpaceLeft() ? grpc::StatusCode::RESOURCE_EXHAUSTED : grpc::StatusCode::ABORTED;
-  //               return grpc::Status(status_code, ex.what());
-  //           }
-  //       }
+  LOG(INFO) << "Restore" << endl;
 
   //TODO: Assemble ZIP file from chunks of data
   Metadata meta = this->GetMetadata(context);
-  string databaseName = "";
+  string databaseName = "restore";
   string zipFilePath = databasePath + "/" + databaseName + ".zip";
+
+  LOG(INFO) << "Restore: zipFilePath" << zipFilePath << endl;
 
   writer.OpenIfNecessary(zipFilePath);
 
+  LOG(INFO) << "Restore: contentPart" << endl;
+
   propane::PropaneRestoreRequest contentPart;
+  reader->SendInitialMetadata();
   //       SequentialFileWriter writer;
   while (reader->Read(&contentPart))
   {
-   auto d = contentPart.chunk().data();
+
+      //LOG(INFO) << "Restore: Read data : "<< contentPart.DebugString()  << endl;
+    auto d = contentPart.chunk().data();
+  
     writer.Write(d);
   }
+
+  
 
   implementation->Restore(&meta, databasePath, zipFilePath);
 
