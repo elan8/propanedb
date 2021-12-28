@@ -91,14 +91,15 @@ grpc::Status Client::Get(std::string id, test::TestEntity *entity)
 
 grpc::Status Client::Delete(std::string id)
 {
+    LOG(INFO) << "Delete" << std::endl;
     ClientContext context;
     context.AddMetadata("database-name", "test");
 
     propane::PropaneId request;
-        propane::PropaneStatus response;
+    propane::PropaneStatus response;
+    request.set_id(id);
 
     return stub_->Delete(&context, request, &response);
-
 }
 
 grpc::Status Client::Backup()

@@ -230,6 +230,7 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata, const propane::PropaneId *
   }
   else
   {
+     LOG(INFO) << "Delete status= " << s.ToString() << endl;
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "No object with this ID in database");
   }
   return grpc::Status::OK;
@@ -348,6 +349,7 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
 void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string> &info)
 {
+  LOG(FATAL) << "Decompress error:" <<std::endl ;
   // inform user about error
   //[...]
 }
@@ -380,6 +382,7 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
   }
   else
   {
+    LOG(INFO) << "RestoreDBFromLatestBackup";
     s = backup_engine->RestoreDBFromLatestBackup(databasePath, databasePath);
     if (!s.ok())
     {

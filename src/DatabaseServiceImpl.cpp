@@ -118,11 +118,11 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
   string databaseName = "restore";
   string zipFilePath = databasePath + "/" + databaseName + ".zip";
 
-  LOG(INFO) << "Restore: zipFilePath" << zipFilePath << endl;
+  //LOG(INFO) << "Restore: zipFilePath" << zipFilePath << endl;
 
   writer.OpenIfNecessary(zipFilePath);
 
-  LOG(INFO) << "Restore: contentPart" << endl;
+  //LOG(INFO) << "Restore: contentPart" << endl;
 
   propane::PropaneRestoreRequest contentPart;
   reader->SendInitialMetadata();
@@ -135,8 +135,6 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
   
     writer.Write(d);
   }
-
-  
 
   implementation->Restore(&meta, databasePath, zipFilePath);
 

@@ -134,6 +134,26 @@ TEST_F(SystemTest, BackupRestore)
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
+  LOG(INFO) << "SystemTest: ID=" << id << std::endl;
+  status = client->Delete(id);
+
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Item deleted" << std::endl;
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+
+  //check that item is removed from database
+  LOG(INFO) << "SystemTest: Get" << std::endl;
+  test::TestEntity item3;
+  auto status2 = client->Get(id, &item3);
+  EXPECT_EQ(status2.ok(), false);
+  //LOG(INFO) << "Get: error code" << status2.error_message() << std::endl;
+
   if (status.ok())
   {
     LOG(INFO) << "SystemTest: Restore" << std::endl;
@@ -144,6 +164,20 @@ TEST_F(SystemTest, BackupRestore)
   {
     EXPECT_EQ(status.ok(), true);
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+
+  LOG(INFO) << "SystemTest: Get "<< id << std::endl;
+  test::TestEntity item4;
+  status = client->Get(id, &item4);
+  if (status.ok())
+  {
+    EXPECT_EQ(item4.description(), "Test1");
+     // LOG(INFO) << "Test completed succesfully!" << std::endl;
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "Get: error code" << status.error_message() << std::endl;
   }
 }
 
