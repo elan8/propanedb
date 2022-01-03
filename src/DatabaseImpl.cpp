@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <fstream>
+#include <thread>
 namespace fs = std::filesystem;
 #include "rocksdb/db.h"
 #include "rocksdb/utilities/backupable_db.h"
@@ -10,7 +11,7 @@ namespace fs = std::filesystem;
 
 #include "DatabaseImpl.hpp"
 
-DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath)
+DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath, bool debug) : databasePath(databasePath), backupPath(backupPath), databases()
 {
   descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   pool = new google::protobuf::DescriptorPool(descriptorDB);
@@ -32,6 +33,25 @@ DatabaseImpl::~DatabaseImpl()
 void DatabaseImpl::setDebugMode(bool enabled)
 {
   debug = enabled;
+}
+
+void DatabaseImpl::CloseDatabases()
+{
+
+    LOG(INFO) << "CloseDatabases"<< endl;
+
+  for (auto it = databases.begin(); it != databases.end(); ++it)
+  {
+     LOG(INFO) << "DB name= "<< it->first << endl;
+    DB *db = it->second;
+    db->Close();
+    databases.erase(it->first );
+    // delete db;
+    // it->second = 0;
+  }
+
+  //databases = map<string, rocksdb::DB *> ();
+
 }
 
 grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
@@ -96,12 +116,13 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
 {
   if (debug)
   {
-    LOG(INFO) << "GetDatabase" << endl;
+    LOG(INFO) << "GetDatabase: " << name << endl;
   }
   fs::path p1;
   p1 += databasePath;
   p1 /= name;
   string path = p1.generic_string();
+  LOG(INFO) << "Database path = " << path << endl;
 
   if (name.length() == 0)
   {
@@ -110,6 +131,8 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
   }
 
   DB *db = databases[name];
+  //db = nullptr;
+  LOG(INFO) << "Database pointer = " << db << endl;
   if (db == nullptr)
   {
     if (debug)
@@ -127,6 +150,14 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
     assert(s.ok());
     databases[name] = db;
   }
+  else
+  {
+    if (debug)
+    {
+      LOG(INFO) << "Re use database pointer " << endl;
+    }
+  }
+  //db->Close();
 
   return db;
 }
@@ -189,17 +220,45 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata, const propane::PropaneId *req
 {
   if (debug)
   {
-    LOG(INFO) << "Get" << endl;
+    LOG(INFO) << "Get: " << endl;
   }
   string databaseName = metadata->databaseName;
   if (databaseName.length() == 0)
   {
+    LOG(INFO) << "Database name is empty" << endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
 
+  LOG(INFO) << "Get: print all entities" << endl;
+  rocksdb::DB *db = GetDatabase(databaseName);
+
+  ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+
+  google::protobuf::Any *any1 = new Any();
+  for (it->Seek(""); it->Valid(); it->Next())
+  {
+    any1->ParseFromString(it->value().ToString());
+    LOG(INFO) << "Get: entity key = " << it->key().ToString() << endl;
+    LOG(INFO) << "Get: entity debug string = " << any1->DebugString() << endl;
+  }
+
+  //   rocksdb::DB *db = GetDatabase(databaseName);
+  //   ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+  //   google::protobuf::Any *any1 = new Any();
+  //   for (it->Seek(""); it->Valid(); it->Next())
+  //   {
+  //     any1->ParseFromString(it->value().ToString());
+  //     LOG(INFO) << "Get: entity key = " << it->key().ToString() << endl;
+  //     LOG(INFO) << "Get: entity debug string = " << any1->DebugString() << endl;
+  //   }
+
+  LOG(INFO) << "Get: request ID= " << request->id() << endl;
+
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Get(ReadOptions(), request->id(), &serializedAny);
-  if (!s.ok()){
+  if (!s.ok())
+  {
+    LOG(INFO) << "Error:" << s.ToString() << endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, s.ToString());
   }
   google::protobuf::Any *any = new Any();
@@ -230,7 +289,7 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata, const propane::PropaneId *
   }
   else
   {
-     LOG(INFO) << "Delete status= " << s.ToString() << endl;
+    LOG(INFO) << "Delete status= " << s.ToString() << endl;
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "No object with this ID in database");
   }
   return grpc::Status::OK;
@@ -314,27 +373,47 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
   BackupEngine *backup_engine;
 
-  rocksdb::Status s = BackupEngine::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
+  auto options = BackupableDBOptions(backupPath);
+  options.share_table_files = false;
+
+  rocksdb::Status s = BackupEngine::Open(Env::Default(), options, &backup_engine);
   assert(s.ok());
   backup_engine->PurgeOldBackups(0);
 
   rocksdb::DB *db = GetDatabase(databaseName);
 
-  s = backup_engine->CreateNewBackup(db);
-  assert(s.ok());
+  ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+
+  google::protobuf::Any *any = new Any();
+  for (it->Seek(""); it->Valid(); it->Next())
+  {
+    any->ParseFromString(it->value().ToString());
+    LOG(INFO) << "Backup: entity key = " << it->key().ToString() << endl;
+    LOG(INFO) << "Backup: entity debug string = " << any->DebugString() << endl;
+  }
+
+  s = backup_engine->CreateNewBackup(db, true);
+  //assert(s.ok());
+  if (!s.ok())
+  {
+    LOG(INFO) << "CreateNewBackup error= " << s.ToString() << endl;
+  }
 
   std::vector<BackupInfo> backup_info;
   backup_engine->GetBackupInfo(&backup_info, true);
 
   LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
+  LOG(INFO) << "Backup: backup ID = " << backup_info.front().backup_id << endl;
 
-  //   if (remove(zipFilePath.c_str()) != 0)
-  // {
-  //   LOG(INFO) << "Error deleting file" << endl;
-  // }
+  s = backup_engine->VerifyBackup(backup_info.front().backup_id);
+  //assert(s.ok());
+  if (!s.ok())
+  {
+    LOG(ERROR) << "VerifyBackup error= " << s.ToString() << endl;
+  }
 
   std::ofstream out(zipFilePath, std::ios::binary);
-  Poco::Zip::Compress c(out, true);
+  Poco::Zip::Compress c(out, false);
   Poco::Path backupDir(backupPath);
   c.addRecursive(backupDir);
   //c.addFile(aFile, "hello.txt");
@@ -349,7 +428,7 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 
 void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string> &info)
 {
-  LOG(FATAL) << "Decompress error:" <<std::endl ;
+  LOG(FATAL) << "Decompress error:" << std::endl;
   // inform user about error
   //[...]
 }
@@ -357,16 +436,39 @@ void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::
 grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
 {
   LOG(INFO) << "Restore: filepath=" << zipFilePath;
+
+  CloseDatabases();
+  // rocksdb::DB *db = GetDatabase(databaseName);
+
+  // ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+
+  // google::protobuf::Any *any = new Any();
+  // for (it->Seek(""); it->Valid(); it->Next())
+  // {
+  //   any->ParseFromString(it->value().ToString());
+  //   LOG(INFO) << "Restore: entity key = " << it->key().ToString() << endl;
+  //   LOG(INFO) << "Restore: entity debug string = " << any->DebugString() << endl;
+  // }
+
+  // rocksdb::Status s = db->Close();
+  // if (!s.ok())
+  // {
+  //   LOG(FATAL) << "Error:" << s.ToString();
+  // }
+
   //TODO: unzip file to RocksDB backup path
   std::ifstream inp(zipFilePath, std::ios::binary);
   poco_assert(inp);
   // decompress to current working dir
+  LOG(INFO) << "Restore: backupPath=" << backupPath;
   Poco::Zip::Decompress dec(inp, Poco::Path(backupPath));
   // if an error happens invoke the ZipTest::onDecompressError method
   dec.EError += Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
   dec.decompressAllFiles();
   dec.EError -= Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
 
+  LOG(INFO) << "Restore: Create backup engine";
+  LOG(INFO) << "Restore from" << backupPath;
   BackupEngineReadOnly *backup_engine;
   rocksdb::Status s = BackupEngineReadOnly::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
   if (!s.ok())
@@ -382,7 +484,11 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
   }
   else
   {
-    LOG(INFO) << "RestoreDBFromLatestBackup";
+    LOG(INFO) << "Backup info:  backup ID= " << info.backup_id;
+        LOG(INFO) << "Backup info:  number of files= " << info.number_files;
+    LOG(INFO) << "RestoreDBFromLatestBackup: " << databasePath;
+    // auto options = RestoreOptions();
+
     s = backup_engine->RestoreDBFromLatestBackup(databasePath, databasePath);
     if (!s.ok())
     {
@@ -391,6 +497,21 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
     }
   }
   delete backup_engine;
+
+
+  //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  // db = GetDatabase(databaseName);
+
+  // ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
+
+  // google::protobuf::Any *any = new Any();
+  // for (it->Seek(""); it->Valid(); it->Next())
+  // {
+  //   any->ParseFromString(it->value().ToString());
+  //   LOG(INFO) << "Restore: entity key = " << it->key().ToString() << endl;
+  //   LOG(INFO) << "Restore: entity debug string = " << any->DebugString() << endl;
+  // }
 
   return grpc::Status::OK;
 }

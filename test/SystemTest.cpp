@@ -112,7 +112,7 @@ TEST_F(SystemTest, BackupRestore)
 
   if (status.ok())
   {
-    LOG(INFO) << "SystemTest: Get" << std::endl;
+    LOG(INFO) << "SystemTest: Get 1" << std::endl;
     test::TestEntity item2;
     status = client->Get(id, &item2);
     EXPECT_EQ(item2.description(), "Test1");
@@ -134,7 +134,21 @@ TEST_F(SystemTest, BackupRestore)
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-  LOG(INFO) << "SystemTest: ID=" << id << std::endl;
+ if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Get 2" << std::endl;
+    test::TestEntity item3;
+    status = client->Get(id, &item3);
+    EXPECT_EQ(item3.description(), "Test1");
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+
+
+  LOG(INFO) << "SystemTest: Delete entity with ID=" << id << std::endl;
   status = client->Delete(id);
 
   if (status.ok())
@@ -148,7 +162,7 @@ TEST_F(SystemTest, BackupRestore)
   }
 
   //check that item is removed from database
-  LOG(INFO) << "SystemTest: Get" << std::endl;
+  LOG(INFO) << "SystemTest: Get removed item" << std::endl;
   test::TestEntity item3;
   auto status2 = client->Get(id, &item3);
   EXPECT_EQ(status2.ok(), false);
@@ -158,7 +172,7 @@ TEST_F(SystemTest, BackupRestore)
   {
     LOG(INFO) << "SystemTest: Restore" << std::endl;
     status = client->Restore();
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+   
   }
   else
   {
@@ -166,17 +180,20 @@ TEST_F(SystemTest, BackupRestore)
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-  LOG(INFO) << "SystemTest: Get "<< id << std::endl;
+  std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+
+  LOG(INFO) << "SystemTest: Get " << id << std::endl;
   test::TestEntity item4;
   status = client->Get(id, &item4);
+  EXPECT_EQ(status.ok(), true);
   if (status.ok())
   {
     EXPECT_EQ(item4.description(), "Test1");
-     // LOG(INFO) << "Test completed succesfully!" << std::endl;
+    // LOG(INFO) << "Test completed succesfully!" << std::endl;
   }
   else
   {
-    EXPECT_EQ(status.ok(), true);
+
     LOG(INFO) << "Get: error code" << status.error_message() << std::endl;
   }
 }

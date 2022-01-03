@@ -48,6 +48,7 @@ private:
 
     static bool IsCorrectEntityType(google::protobuf::Any *any, std::string type);
     rocksdb::DB *GetDatabase(string name);
+    void CloseDatabases();
     void onDecompressError(const void* pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>& info);
 
 public:

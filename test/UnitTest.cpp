@@ -112,8 +112,27 @@ TEST_F(UnitTest, PutGet)
   {
     string zipFile ="test.zip";
     db->Backup(&meta,"test",zipFile);
+
+    propane::PropaneId request;
+    request.set_id(id);
+    request.set_databasename("test");
+    propane::PropaneStatus status;
+    db->Delete(&meta,&request,&status);
+
+   propane::PropaneEntity reply2;
+    grpc::Status s = db->Get(&meta, &request, &reply2);
+
+    EXPECT_EQ(s.ok(), false);
+
     db->Restore(&meta,"test",zipFile);
+
+       propane::PropaneEntity reply3;
+    s = db->Get(&meta, &request, &reply3);
+
+    EXPECT_EQ(s.ok(), true);
   }
+
+  
 }
 
 

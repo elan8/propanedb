@@ -25,12 +25,12 @@ Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
   std::multimap<grpc::string_ref, grpc::string_ref> data = context->client_metadata();
   if (debug)
   {
-    LOG(INFO) << "GetMetadata from context:" << endl;
-    LOG(INFO) << data.size();
-    for (auto iter = data.begin(); iter != data.end(); ++iter)
-    {
-      LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
-    }
+    // LOG(INFO) << "GetMetadata from context:" << endl;
+    // LOG(INFO) << data.size();
+    // for (auto iter = data.begin(); iter != data.end(); ++iter)
+    // {
+    //   LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
+    // }
   }
 
   auto map = context->client_metadata();
@@ -88,7 +88,7 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
 {
   Metadata meta = this->GetMetadata(context);
   string databaseName = request->databasename();
-  string zipFilePath = databasePath + "/" + databaseName + ".zip";
+  string zipFilePath = "/tmp/backup.zip";
   implementation->Backup(&meta, databaseName, zipFilePath);
 
   //TODO: upload contents of the ZIP file as chunks of bytes in a stream
@@ -116,9 +116,10 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
   //TODO: Assemble ZIP file from chunks of data
   Metadata meta = this->GetMetadata(context);
   string databaseName = "restore";
-  string zipFilePath = databasePath + "/" + databaseName + ".zip";
+  string zipFilePath = "/tmp/" + databaseName + ".zip";
+  //string zipFilePath ="backup.zip";
 
-  //LOG(INFO) << "Restore: zipFilePath" << zipFilePath << endl;
+  LOG(INFO) << "Restore: zipFilePath = " << zipFilePath << endl;
 
   writer.OpenIfNecessary(zipFilePath);
 
@@ -130,13 +131,14 @@ grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::Server
   while (reader->Read(&contentPart))
   {
 
-      //LOG(INFO) << "Restore: Read data : "<< contentPart.DebugString()  << endl;
+    LOG(INFO) << "Restore: Read data " << endl;
     auto d = contentPart.chunk().data();
   
     writer.Write(d);
   }
+  
 
-  implementation->Restore(&meta, databasePath, zipFilePath);
+  implementation->Restore(&meta, databasePath+"/test", zipFilePath);
 
   return grpc::Status::OK;
 }

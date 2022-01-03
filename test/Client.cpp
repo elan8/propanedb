@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <fstream>
+#include <thread>
 #include <glog/logging.h>
 #include <grpcpp/grpcpp.h>
 #include "propanedb.grpc.pb.h"
@@ -142,6 +143,7 @@ grpc::Status Client::Restore()
     writer->WaitForInitialMetadata();
 
     reader.Read(chunk_size);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     return grpc::Status::OK;
 }
