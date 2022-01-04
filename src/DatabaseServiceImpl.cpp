@@ -21,25 +21,15 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
 {
   Metadata metadata;
-
   std::multimap<grpc::string_ref, grpc::string_ref> data = context->client_metadata();
-  if (debug)
-  {
-    // LOG(INFO) << "GetMetadata from context:" << endl;
-    // LOG(INFO) << data.size();
-    // for (auto iter = data.begin(); iter != data.end(); ++iter)
-    // {
-    //   LOG(INFO) << "Header key: " << iter->first << ", value: " << iter->second;
-    // }
-  }
 
   auto map = context->client_metadata();
   auto search = map.find("database-name");
   if (search != map.end())
   {
-    const char * data = (search->second).data();
+    const char *data = (search->second).data();
     LOG(INFO) << "length= " << (search->second).length();
-    metadata.databaseName = std::string(data, (search->second).length() );
+    metadata.databaseName = std::string(data, (search->second).length());
     if (debug)
     {
       LOG(INFO) << "databaseName :" << metadata.databaseName;
@@ -90,17 +80,14 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
   string databaseName = request->databasename();
   string zipFilePath = "/tmp/backup.zip";
   implementation->Backup(&meta, databaseName, zipFilePath);
-
-  //TODO: upload contents of the ZIP file as chunks of bytes in a stream
   BackupReader reader(zipFilePath, writer);
-  //FileReader<propane::PropaneBackupReply> reader(zipFilePath, writer);
 
   const size_t chunk_size = 1UL << 20; // Hardcoded to 1MB, which seems to be recommended from experience.
   reader.Read(chunk_size);
 
   if (remove(zipFilePath.c_str()) != 0)
   {
-    LOG(INFO) << "Error deleting file" << endl;
+    LOG(ERROR) << "Error deleting file" << endl;
   }
 
   return grpc::Status::OK;
@@ -108,37 +95,35 @@ grpc::Status DatabaseServiceImpl::Backup(ServerContext *context, const ::propane
 grpc::Status DatabaseServiceImpl::Restore(ServerContext *context, ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
                                           ::propane::PropaneRestoreReply *response)
 {
-
   FileWriter writer;
 
-  LOG(INFO) << "Restore" << endl;
-
-  //TODO: Assemble ZIP file from chunks of data
   Metadata meta = this->GetMetadata(context);
+
+
   string databaseName = "restore";
   string zipFilePath = "/tmp/" + databaseName + ".zip";
-  //string zipFilePath ="backup.zip";
 
-  LOG(INFO) << "Restore: zipFilePath = " << zipFilePath << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Restore: zipFilePath = " << zipFilePath << endl;
+  }
 
   writer.OpenIfNecessary(zipFilePath);
-
-  //LOG(INFO) << "Restore: contentPart" << endl;
-
   propane::PropaneRestoreRequest contentPart;
   reader->SendInitialMetadata();
-  //       SequentialFileWriter writer;
   while (reader->Read(&contentPart))
   {
-
-    LOG(INFO) << "Restore: Read data " << endl;
+    databaseName = contentPart.chunk().databasename();
     auto d = contentPart.chunk().data();
-  
     writer.Write(d);
   }
-  
 
-  implementation->Restore(&meta, databasePath+"/test", zipFilePath);
+  if (debug)
+  {
+    LOG(INFO) << "Restore: databaseName = " << databaseName << endl;
+  }
+
+  implementation->Restore(&meta, databasePath + "/" + databaseName, zipFilePath);
 
   return grpc::Status::OK;
 }

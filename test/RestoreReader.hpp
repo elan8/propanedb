@@ -23,22 +23,16 @@
 class RestoreReader
 {
 public:
-    RestoreReader(const std::string &file_name, ::grpc::ClientWriter<::propane::PropaneRestoreRequest> *writer)
-        : m_file_path(file_name), mp_writer(writer), m_data(nullptr), m_size(0)
+    RestoreReader(const std::string &file_name, ::grpc::ClientWriter<::propane::PropaneRestoreRequest> *writer, std::string databaseName)
+        : m_file_path(file_name), mp_writer(writer), m_data(nullptr), m_size(0), m_databaseName(databaseName)
     {
-        LOG(INFO) << "RestoreReader constructor" << std::endl;
-        LOG(INFO) << "m_file_path=" << m_file_path << std::endl;
-
         int fd = open(file_name.c_str(), O_RDONLY);
         if (-1 == fd)
         {
-            //raise_from_errno("Failed to open file.");
             LOG(ERROR) << "Failed to open file: " << file_name.c_str() << std::endl;
         }
-
         // Ensure that fd will be closed if this method aborts at any point
         MMapPtr<const std::uint8_t> mmap_p(nullptr, 0, fd);
-
         struct stat st
         {
         };
@@ -67,7 +61,7 @@ public:
             rc = posix_madvise(mapping, m_size, POSIX_MADV_SEQUENTIAL);
             if (-1 == rc)
             {
-                //raise_from_errno("Failed to set intended access pattern useing posix_madvise().");
+                  LOG(ERROR) << "Failed to set intended access pattern using posix_madvise()" << std::endl;
             }
 
             m_data.swap(mmap_p);
@@ -76,11 +70,7 @@ public:
 
     void Read(size_t max_chunk_size)
     {
-        LOG(INFO) << "FileReader::Read" << std::endl;
-        LOG(INFO) << "m_file_path=" << m_file_path << std::endl;
-        LOG(INFO) << "m_size = " << m_size << std::endl;
         size_t bytes_read = 0;
-
         // Handle empty files. Note that m_data will likely be null, so we take care not to access it.
         if (0 == m_size)
         {
@@ -90,39 +80,15 @@ public:
         }
         else
         {
-            // propane::PropaneRestoreRequest request;
-            // propane::PropaneFileChunk *chunk = new propane::PropaneFileChunk();
-            // propane::PropaneFileHeader *header = new propane::PropaneFileHeader();
-            // header->set_databasename("test");
-            // request.set_allocated_chunk(chunk);
-  
-            // if (!mp_writer->Write(request))
-            // {
-            //     //raise_from_system_error_code("The server aborted the connection.", ECONNRESET);
-            //     LOG(ERROR) << "The server aborted the connection: " << std::endl;
-            // }
         }
 
         while (bytes_read < m_size)
         {
             size_t bytes_to_read = std::min(max_chunk_size, m_size - bytes_read);
-
-            // TODO: Here would be a good point to hint the kernel about the size of out subsequent
-            // read, by using posix_madvise() to give the advice POSIX_MADV_WILLNEED for the following
-            // max_chunk_size bytes after the ones we are about to read now. Hopefully by the time
-            // we need them, they'll be in the cache.
-            LOG(INFO) << "Read: OnChunkAvailable." << std::endl;
             OnChunkAvailable(m_data.get() + bytes_read, bytes_to_read);
-
-            // If we implemented the optimisation suggested above, now would be the time to set the
-            // advice POSIX_MADV_SEQUENTIAL for the data we have just finished reading. Note we should
-            // not use POSIX_MADV_DONTNEED because Linux ignores it (see the posix_madvise man page),
-            // and because multiple concurrent reads could suffer from it.
-
             bytes_read += bytes_to_read;
         }
 
-        //mp_writer->Finish();
     }
 
     std::string GetFilePath() const
@@ -135,34 +101,20 @@ public:
         LOG(INFO) << "RestoreReader -> OnChunkAvailable: " << size << " bytes" << std::endl;
         propane::PropaneRestoreRequest request;
         propane::PropaneFileChunk *chunk = new propane::PropaneFileChunk();
-
-        //auto s =::std::string(reinterpret_cast<const char*>(data), size) ;
-
-        //const std::string *sp = static_cast<const std::string*>(data);
-        //std::string *s = (std::string*) sp;
-        //chunk->set_allocated_data(&s);
-        //chunk->set_data(data, size);
-        //std::string s ;
-        //s =
-        //chunk->set_allocated_data(s);
+        chunk->set_databasename(m_databaseName);
         chunk->set_data(data, size);
         request.set_allocated_chunk(chunk);
-        //request.set_allocated_header(header);
-
-        //LOG(INFO) << "Request:" << request.DebugString() << std::endl;
-
         if (!mp_writer->Write(request))
         {
-            //raise_from_system_error_code("The server aborted the connection.", ECONNRESET);
             LOG(ERROR) << "The server aborted the connection: " << std::endl;
         }
     }
 
 private:
     std::string m_file_path;
+    std::string m_databaseName;
     std::unique_ptr<const std::uint8_t, std::function<void(const std::uint8_t *)>> m_data;
     size_t m_size;
-
     ::grpc::ClientWriter<::propane::PropaneRestoreRequest> *mp_writer;
     std::uint32_t m_id;
 };

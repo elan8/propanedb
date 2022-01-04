@@ -218,7 +218,7 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata, const propane::PropaneId *req
 {
   if (debug)
   {
-    LOG(INFO) << "Get: " << endl;
+    LOG(INFO) << "Get: request ID= " << request->id() << endl;
   }
   string databaseName = metadata->databaseName;
   if (databaseName.length() == 0)
@@ -227,30 +227,7 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata, const propane::PropaneId *req
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
 
-  LOG(INFO) << "Get: print all entities" << endl;
   rocksdb::DB *db = GetDatabase(databaseName);
-
-  ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
-
-  google::protobuf::Any *any1 = new Any();
-  for (it->Seek(""); it->Valid(); it->Next())
-  {
-    any1->ParseFromString(it->value().ToString());
-    LOG(INFO) << "Get: entity key = " << it->key().ToString() << endl;
-    LOG(INFO) << "Get: entity debug string = " << any1->DebugString() << endl;
-  }
-
-  //   rocksdb::DB *db = GetDatabase(databaseName);
-  //   ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
-  //   google::protobuf::Any *any1 = new Any();
-  //   for (it->Seek(""); it->Valid(); it->Next())
-  //   {
-  //     any1->ParseFromString(it->value().ToString());
-  //     LOG(INFO) << "Get: entity key = " << it->key().ToString() << endl;
-  //     LOG(INFO) << "Get: entity debug string = " << any1->DebugString() << endl;
-  //   }
-
-  LOG(INFO) << "Get: request ID= " << request->id() << endl;
 
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Get(ReadOptions(), request->id(), &serializedAny);
@@ -379,32 +356,23 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
   backup_engine->PurgeOldBackups(0);
 
   rocksdb::DB *db = GetDatabase(databaseName);
-
-  ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
-
-  google::protobuf::Any *any = new Any();
-  for (it->Seek(""); it->Valid(); it->Next())
-  {
-    any->ParseFromString(it->value().ToString());
-    LOG(INFO) << "Backup: entity key = " << it->key().ToString() << endl;
-    LOG(INFO) << "Backup: entity debug string = " << any->DebugString() << endl;
-  }
-
   s = backup_engine->CreateNewBackup(db, true);
-  //assert(s.ok());
   if (!s.ok())
   {
-    LOG(INFO) << "CreateNewBackup error= " << s.ToString() << endl;
+    LOG(ERROR) << "CreateNewBackup error= " << s.ToString() << endl;
   }
 
   std::vector<BackupInfo> backup_info;
   backup_engine->GetBackupInfo(&backup_info, true);
 
-  LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
-  LOG(INFO) << "Backup: backup ID = " << backup_info.front().backup_id << endl;
+  if (debug)
+  {
+    LOG(INFO) << "Backup: file name = " << backup_info.front().file_details.front().relative_filename << endl;
+    LOG(INFO) << "Backup: backup ID = " << backup_info.front().backup_id << endl;
+  }
 
   s = backup_engine->VerifyBackup(backup_info.front().backup_id);
-  //assert(s.ok());
+
   if (!s.ok())
   {
     LOG(ERROR) << "VerifyBackup error= " << s.ToString() << endl;
@@ -430,37 +398,38 @@ void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::
 grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
 {
   CloseDatabases();
-
   std::ifstream inp(zipFilePath, std::ios::binary);
   poco_assert(inp);
-  // decompress to current working dir
-  LOG(INFO) << "Restore: backupPath=" << backupPath;
   Poco::Zip::Decompress dec(inp, Poco::Path(backupPath));
   // if an error happens invoke the ZipTest::onDecompressError method
   dec.EError += Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
   dec.decompressAllFiles();
   dec.EError -= Poco::Delegate<DatabaseImpl, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>>(this, &DatabaseImpl::onDecompressError);
 
-  LOG(INFO) << "Restore: Create backup engine";
-  LOG(INFO) << "Restore from" << backupPath;
+  if (debug)
+  {
+    LOG(INFO) << "Restore: Create backup engine";
+    LOG(INFO) << "Restore from" << backupPath;
+  }
+
   BackupEngineReadOnly *backup_engine;
   rocksdb::Status s = BackupEngineReadOnly::Open(Env::Default(), BackupableDBOptions(backupPath), &backup_engine);
   if (!s.ok())
   {
-    LOG(FATAL) << "Error:" << s.ToString();
+    LOG(ERROR) << "Error:" << s.ToString();
   }
   BackupInfo info;
   s = backup_engine->GetLatestBackupInfo(&info, false);
   if (s.IsNotFound())
   {
-    LOG(INFO) << "No backup found, so nothing to restore";
+    LOG(ERROR) << "No backup found, so nothing to restore";
   }
   else
   {
     s = backup_engine->RestoreDBFromLatestBackup(databaseName, databaseName);
     if (!s.ok())
     {
-      LOG(FATAL) << "Error: " << s.ToString();
+      LOG(ERROR) << "Error: " << s.ToString();
       return grpc::Status::CANCELLED;
     }
   }

@@ -38,6 +38,7 @@ private:
     DatabaseImpl *implementation;
     Metadata GetMetadata(ServerContext *context);
     bool debug;
+
 public:
     DatabaseServiceImpl(const string &databasePath, const string &backupPath, bool debug);
     ~DatabaseServiceImpl();
@@ -51,11 +52,8 @@ public:
                         propane::PropaneEntities *reply) override;
     grpc::Status CreateDatabase(ServerContext *context, const propane::PropaneDatabase *request,
                                 propane::PropaneStatus *reply) override;
-
-
-    grpc::Status Backup(ServerContext* context, const ::propane::PropaneBackupRequest* request, 
-    ::grpc::ServerWriter< ::propane::PropaneBackupReply>* writer);
-    grpc::Status Restore(ServerContext* context, ::grpc::ServerReader< ::propane::PropaneRestoreRequest>* reader, 
-    ::propane::PropaneRestoreReply* response);
-
+    grpc::Status Backup(ServerContext *context, const ::propane::PropaneBackupRequest *request,
+                        ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer);
+    grpc::Status Restore(ServerContext *context, ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
+                         ::propane::PropaneRestoreReply *response);
 };

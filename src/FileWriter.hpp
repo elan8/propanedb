@@ -2,9 +2,7 @@
 
 #include <fstream>
 #include <string>
-
-//#include "messages.h"
-//#include "utils.h"
+#include <glog/logging.h>
 
 class FileWriter {
 public:
@@ -12,13 +10,7 @@ public:
     FileWriter();
     FileWriter(FileWriter&&);
     FileWriter& operator=(FileWriter&&);
-
-    // Open the file at the relative path 'name' for writing. On errors throw std::system_error
     void OpenIfNecessary(const std::string& name);
-
-    // Write data from a string. On errors throws an exception drived from std::system_error
-    // This method may take ownership of the string. Hence no assumption may be made about
-    // the data it contains after it returns.
     void Write(std::string& data);
 
     bool NoSpaceLeft() const

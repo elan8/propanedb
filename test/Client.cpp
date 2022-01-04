@@ -32,14 +32,11 @@ grpc::Status Client::CreateDatabase()
 {
     LOG(INFO) << "Client: CreateDatabase" << std::endl;
     ClientContext context;
-
     std::ifstream fileStream("descriptor.bin");
     std::string descriptor((std::istreambuf_iterator<char>(fileStream)),
                            std::istreambuf_iterator<char>());
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    //    LOG(INFO) << "Client: fd =" <<  fd->DebugString() << std::endl;
-
     propane::PropaneDatabase request;
     request.set_databasename(databaseName);
     request.set_allocated_descriptor_set(fd);
@@ -59,15 +56,9 @@ grpc::Status Client::Put(test::TestEntity item, std::string *id)
     anyMessage->PackFrom(item);
     entity->set_allocated_data(anyMessage);
     request.set_allocated_entity(entity);
-    //request.set_databasename("test");
-
     auto status = stub_->Put(&context, request, &response);
-
     *id = response.id();
     LOG(INFO) << "Put: ID= " << response.id() << std::endl;
-
-    //output.copy(id,output.length());
-    //id = *(&output);
 
     return status;
 }
@@ -110,7 +101,6 @@ grpc::Status Client::Backup()
     propane::PropaneBackupRequest request;
     request.set_databasename(databaseName);
     propane::PropaneBackupReply *reply = new propane::PropaneBackupReply();
-
     auto streamReader = stub_->Backup(&context, request);
     auto reader = streamReader.get();
     FileWriter writer;
@@ -118,40 +108,31 @@ grpc::Status Client::Backup()
 
     while (reader->Read(reply))
     {
-        LOG(INFO) << "Client: Backup data received" << std::endl;
         std::string data = reply->chunk().data();
         writer.Write(data);
     }
-    LOG(INFO) << "Client: Backup data complete" << std::endl;
-
     auto status = reader->Finish();
-
-    LOG(INFO) << "Backup: reader finish: " << status.error_details() << std::endl;
     return grpc::Status::OK;
 }
 
 grpc::Status Client::Restore()
 {
+    const size_t chunk_size = 1UL << 20; // Hardcoded to 1MB, which seems to be recommended from experience.
     ClientContext context;
     propane::PropaneRestoreReply response;
 
-    const size_t chunk_size = 1UL << 20; // Hardcoded to 1MB, which seems to be recommended from experience.
-
     auto writerPointer = stub_->Restore(&context, &response);
     auto writer = writerPointer.get();
-    RestoreReader reader("backup.zip", writer);
+    RestoreReader reader("backup.zip", writer, databaseName);
     writer->WaitForInitialMetadata();
-
     reader.Read(chunk_size);
-
     writer->WritesDone();
-        Status status = writer->Finish();
-        if (!status.ok()) {
-             LOG(INFO) << "File Exchange rpc failed: " << status.error_message() << std::endl;
-            //return false;
-            return grpc::Status::CANCELLED;
-        }
-    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    Status status = writer->Finish();
+    if (!status.ok())
+    {
+        LOG(INFO) << "File Exchange rpc failed: " << status.error_message() << std::endl;
+        return grpc::Status::CANCELLED;
+    }
 
     return grpc::Status::OK;
 }
