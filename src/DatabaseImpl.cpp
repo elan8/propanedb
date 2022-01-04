@@ -37,24 +37,21 @@ void DatabaseImpl::setDebugMode(bool enabled)
 
 void DatabaseImpl::CloseDatabases()
 {
-
-  LOG(INFO) << "CloseDatabases" << endl;
+  if (debug)
+  {
+    LOG(INFO) << "CloseDatabases" << endl;
+  }
 
   for (auto it = databases.begin(); it != databases.end(); ++it)
   {
-    LOG(INFO) << "DB name= " << it->first << endl;
     DB *db = it->second;
     auto status = db->Close();
     if (!status.ok())
     {
-      LOG(INFO) << "Error: " << status.ToString() << endl;
+      LOG(FATAL) << "Error: " << status.ToString() << endl;
     }
     databases.erase(it->first);
-    // delete db;
-    // it->second = 0;
   }
-
-  //databases = map<string, rocksdb::DB *> ();
 }
 
 grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
@@ -134,8 +131,6 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
   }
 
   DB *db = databases[name];
-  //db = nullptr;
-  LOG(INFO) << "Database pointer = " << db << endl;
   if (db == nullptr)
   {
     if (debug)
@@ -145,14 +140,13 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
     Options options;
     options.IncreaseParallelism();
     options.OptimizeLevelStyleCompaction();
-    ROCKSDB_NAMESPACE::Status s = DB::Open(options, path, &db);
-    if (debug)
+    ROCKSDB_NAMESPACE::Status status = DB::Open(options, path, &db);
+    if (!status.ok())
     {
-      LOG(INFO) << "DB Open: Status code="s << s.ToString() << endl;
+      LOG(ERROR) << "Error: Status = " << status.ToString() << endl;
+      return 0;
     }
-    assert(s.ok());
-    LOG(INFO) << "New Database pointer = " << db << endl;
-    LOG(INFO) << "New Database pointer name= " << name << endl;
+
     databases[name] = db;
   }
   else
@@ -162,7 +156,6 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
       LOG(INFO) << "Re use database pointer " << endl;
     }
   }
-  //db->Close();
 
   return db;
 }
@@ -437,7 +430,7 @@ void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::
 grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
 {
   CloseDatabases();
- 
+
   std::ifstream inp(zipFilePath, std::ios::binary);
   poco_assert(inp);
   // decompress to current working dir

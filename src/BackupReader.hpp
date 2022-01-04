@@ -19,23 +19,15 @@
 
 #include "propanedb.grpc.pb.h"
 
-
-
 class BackupReader
 {
 public:
-    BackupReader(const std::string &file_name,  ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer)
-       : m_file_path(file_name), mp_writer(writer)
-    , m_data(nullptr)
-    , m_size(0)
+    BackupReader(const std::string &file_name, ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer)
+        : m_file_path(file_name), mp_writer(writer), m_data(nullptr), m_size(0)
     {
-        LOG(INFO) << "FileReader constructor" << std::endl;
-                LOG(INFO) << "m_file_path="<< m_file_path << std::endl;
-
         int fd = open(file_name.c_str(), O_RDONLY);
         if (-1 == fd)
         {
-            //raise_from_errno("Failed to open file.");
             LOG(ERROR) << "Failed to open file: " << file_name.c_str() << std::endl;
         }
 
@@ -48,19 +40,16 @@ public:
         int rc = fstat(fd, &st);
         if (-1 == rc)
         {
-            //raise_from_errno("Failed to read file size.");
             LOG(ERROR) << "Failed to read file size." << std::endl;
         }
         m_size = st.st_size;
-        LOG(INFO) << "m_size" << m_size <<std::endl;
+        LOG(INFO) << "m_size" << m_size << std::endl;
 
         if (m_size > 0)
         {
-            //std::cout << m_size << ' ' << PROT_READ << ' ' << MAP_FILE << ' ' << fd << std::endl;
             void *const mapping = mmap(0, m_size, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
             if (MAP_FAILED == mapping)
             {
-                //raise_from_errno("Failed to map the file into memory.");
                 LOG(ERROR) << "Failed to map the file into memory." << std::endl;
             }
 
@@ -70,7 +59,7 @@ public:
             rc = posix_madvise(mapping, m_size, POSIX_MADV_SEQUENTIAL);
             if (-1 == rc)
             {
-                //raise_from_errno("Failed to set intended access pattern useing posix_madvise().");
+                  LOG(ERROR) << "Failed to set intended access pattern useing posix_madvise()" << std::endl;
             }
 
             m_data.swap(mmap_p);
@@ -79,11 +68,7 @@ public:
 
     void Read(size_t max_chunk_size)
     {
-        LOG(INFO) << "FileReader::Read" << std::endl;
-          LOG(INFO) << "m_file_path="<< m_file_path << std::endl;
-         LOG(INFO) << "m_size = " << m_size<< std::endl;
         size_t bytes_read = 0;
-
         // Handle empty files. Note that m_data will likely be null, so we take care not to access it.
         if (0 == m_size)
         {
@@ -119,12 +104,10 @@ public:
 
     void OnChunkAvailable(const void *data, size_t size)
     {
-        LOG(INFO) << "FileReaderBackup -> OnChunkAvailable: " << size << " bytes" << std::endl;
         propane::PropaneBackupReply reply;
         propane::PropaneFileChunk *chunk = new propane::PropaneFileChunk();
         chunk->set_data(data, size);
         reply.set_allocated_chunk(chunk);
-        //LOG(INFO) << "PropaneBackupReply=" << reply.DebugString();
 
         if (!mp_writer->Write(reply))
         {
@@ -133,12 +116,11 @@ public:
         }
     }
 
-    private:
-
+private:
     std::string m_file_path;
     std::unique_ptr<const std::uint8_t, std::function<void(const std::uint8_t *)>> m_data;
     size_t m_size;
 
-     ::grpc::ServerWriter<::propane::PropaneBackupReply> *mp_writer;
+    ::grpc::ServerWriter<::propane::PropaneBackupReply> *mp_writer;
     std::uint32_t m_id;
 };
