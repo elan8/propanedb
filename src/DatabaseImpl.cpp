@@ -38,20 +38,23 @@ void DatabaseImpl::setDebugMode(bool enabled)
 void DatabaseImpl::CloseDatabases()
 {
 
-    LOG(INFO) << "CloseDatabases"<< endl;
+  LOG(INFO) << "CloseDatabases" << endl;
 
   for (auto it = databases.begin(); it != databases.end(); ++it)
   {
-     LOG(INFO) << "DB name= "<< it->first << endl;
+    LOG(INFO) << "DB name= " << it->first << endl;
     DB *db = it->second;
-    db->Close();
-    databases.erase(it->first );
+    auto status = db->Close();
+    if (!status.ok())
+    {
+      LOG(INFO) << "Error: " << status.ToString() << endl;
+    }
+    databases.erase(it->first);
     // delete db;
     // it->second = 0;
   }
 
   //databases = map<string, rocksdb::DB *> ();
-
 }
 
 grpc::Status DatabaseImpl::CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
@@ -148,6 +151,8 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
       LOG(INFO) << "DB Open: Status code="s << s.ToString() << endl;
     }
     assert(s.ok());
+    LOG(INFO) << "New Database pointer = " << db << endl;
+    LOG(INFO) << "New Database pointer name= " << name << endl;
     databases[name] = db;
   }
   else
@@ -416,8 +421,6 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
   Poco::Zip::Compress c(out, false);
   Poco::Path backupDir(backupPath);
   c.addRecursive(backupDir);
-  //c.addFile(aFile, "hello.txt");
-  //c.addFile(theFile, theFile);
   c.close(); // MUST be done to finalize the Zip file
 
   backup_engine->PurgeOldBackups(0);
@@ -429,34 +432,12 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName,
 void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string> &info)
 {
   LOG(FATAL) << "Decompress error:" << std::endl;
-  // inform user about error
-  //[...]
 }
 
 grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
 {
-  LOG(INFO) << "Restore: filepath=" << zipFilePath;
-
   CloseDatabases();
-  // rocksdb::DB *db = GetDatabase(databaseName);
-
-  // ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
-
-  // google::protobuf::Any *any = new Any();
-  // for (it->Seek(""); it->Valid(); it->Next())
-  // {
-  //   any->ParseFromString(it->value().ToString());
-  //   LOG(INFO) << "Restore: entity key = " << it->key().ToString() << endl;
-  //   LOG(INFO) << "Restore: entity debug string = " << any->DebugString() << endl;
-  // }
-
-  // rocksdb::Status s = db->Close();
-  // if (!s.ok())
-  // {
-  //   LOG(FATAL) << "Error:" << s.ToString();
-  // }
-
-  //TODO: unzip file to RocksDB backup path
+ 
   std::ifstream inp(zipFilePath, std::ios::binary);
   poco_assert(inp);
   // decompress to current working dir
@@ -475,7 +456,6 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
   {
     LOG(FATAL) << "Error:" << s.ToString();
   }
-  //assert(s.ok());
   BackupInfo info;
   s = backup_engine->GetLatestBackupInfo(&info, false);
   if (s.IsNotFound())
@@ -484,12 +464,7 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
   }
   else
   {
-    LOG(INFO) << "Backup info:  backup ID= " << info.backup_id;
-        LOG(INFO) << "Backup info:  number of files= " << info.number_files;
-    LOG(INFO) << "RestoreDBFromLatestBackup: " << databasePath;
-    // auto options = RestoreOptions();
-
-    s = backup_engine->RestoreDBFromLatestBackup(databasePath, databasePath);
+    s = backup_engine->RestoreDBFromLatestBackup(databaseName, databaseName);
     if (!s.ok())
     {
       LOG(FATAL) << "Error: " << s.ToString();
@@ -497,21 +472,6 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName
     }
   }
   delete backup_engine;
-
-
-  //std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-  // db = GetDatabase(databaseName);
-
-  // ROCKSDB_NAMESPACE::Iterator *it = db->NewIterator(ReadOptions());
-
-  // google::protobuf::Any *any = new Any();
-  // for (it->Seek(""); it->Valid(); it->Next())
-  // {
-  //   any->ParseFromString(it->value().ToString());
-  //   LOG(INFO) << "Restore: entity key = " << it->key().ToString() << endl;
-  //   LOG(INFO) << "Restore: entity debug string = " << any->DebugString() << endl;
-  // }
 
   return grpc::Status::OK;
 }

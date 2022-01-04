@@ -180,7 +180,7 @@ TEST_F(SystemTest, BackupRestore)
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(6000));
 
   LOG(INFO) << "SystemTest: Get " << id << std::endl;
   test::TestEntity item4;

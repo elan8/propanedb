@@ -143,6 +143,14 @@ grpc::Status Client::Restore()
     writer->WaitForInitialMetadata();
 
     reader.Read(chunk_size);
+
+    writer->WritesDone();
+        Status status = writer->Finish();
+        if (!status.ok()) {
+             LOG(INFO) << "File Exchange rpc failed: " << status.error_message() << std::endl;
+            //return false;
+            return grpc::Status::CANCELLED;
+        }
     //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     return grpc::Status::OK;
