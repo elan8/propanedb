@@ -11,8 +11,7 @@ Features:
 - Delete objects based on their UUID  
 - Search function based on the fields of the Protobuf objects
 - Support multiple databases per instance
-
-Currently this project is still pre-alpha: not suitable for any practical usage yet.
+- Backup and restore functionality
 
 ## Getting started
 In order to use PropaneDB with your application, you can use the Golang driver.

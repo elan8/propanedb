@@ -56,6 +56,17 @@ int main(int argc, char **argv)
     }
   }
 
+
+char* path = std::getenv("PATH");
+  if (path)
+  {
+   
+      LOG(INFO) << "PATH="<< path << '\n';
+      databasePath=path;
+  
+  }
+
+
   RunServer();
   return 0;
 }

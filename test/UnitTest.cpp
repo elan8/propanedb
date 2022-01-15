@@ -9,13 +9,14 @@
 #include "test.pb.h"
 #include "DatabaseImpl.hpp"
 #include <boost/filesystem.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
 class UnitTest : public ::testing::Test
 {
 protected:
-
   UnitTest()
   {
     // You can do set-up work for each test here.
@@ -28,7 +29,7 @@ protected:
 
   void SetUp() override
   {
-
+   LOG(INFO) << "SetUp" << std::endl;
     std::string dir("/tmp/test1");
     try
     {
@@ -40,14 +41,19 @@ protected:
     }
     catch (boost::filesystem::filesystem_error const &e)
     {
-       LOG(INFO) << "Error: " << e.what() << std::endl;
+      LOG(INFO) << "Error: " << e.what() << std::endl;
     }
     db = new DatabaseImpl(dir, dir, true);
   }
 
   void TearDown() override
   {
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+     LOG(INFO) << "Teardown" << std::endl;
     delete db;
+
+
+    
   }
 
   DatabaseImpl *db;
@@ -62,7 +68,7 @@ TEST_F(UnitTest, PutGet)
   item.set_description(description);
 
   Metadata meta;
-  meta.databaseName="test";
+  meta.databaseName = "test";
 
   {
     std::ifstream t("descriptor.bin");
@@ -102,37 +108,14 @@ TEST_F(UnitTest, PutGet)
     request.set_databasename("test");
 
     propane::PropaneEntity reply;
-        //Metadata meta;
+    //Metadata meta;
     grpc::Status s = db->Get(&meta, &request, &reply);
 
     EXPECT_EQ(s.ok(), true);
     LOG(INFO) << "Get: any receive: " << reply.data().DebugString() << std::endl;
   }
 
-  {
-    string zipFile ="test.zip";
-    db->Backup(&meta,"test",zipFile);
-
-    propane::PropaneId request;
-    request.set_id(id);
-    request.set_databasename("test");
-    propane::PropaneStatus status;
-    db->Delete(&meta,&request,&status);
-
-   propane::PropaneEntity reply2;
-    grpc::Status s = db->Get(&meta, &request, &reply2);
-
-    EXPECT_EQ(s.ok(), false);
-
-    db->Restore(&meta,"test",zipFile);
-
-       propane::PropaneEntity reply3;
-    s = db->Get(&meta, &request, &reply3);
-
-    EXPECT_EQ(s.ok(), true);
-  }
-
-  
+ 
 }
 
 

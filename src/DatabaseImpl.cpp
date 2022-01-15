@@ -25,6 +25,7 @@ DatabaseImpl::~DatabaseImpl()
   {
     DB *db = it->second;
     db->Close();
+    delete db;
   }
 
   delete descriptorDB;

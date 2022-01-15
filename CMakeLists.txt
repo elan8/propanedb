@@ -173,5 +173,5 @@ target_link_libraries(
   ${Protobuf_LIBRARIES})
 
 include(GoogleTest)
-gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600)
-gtest_discover_tests(systemTest PROPERTIES TIMEOUT 600)
+gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
+gtest_discover_tests(systemTest PROPERTIES TIMEOUT 600 RUN_SERIAL)

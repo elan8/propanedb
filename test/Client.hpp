@@ -14,6 +14,7 @@ using grpc::ClientContext;
 using grpc::Status;
 
 //propane::Database::NewStub
+//template <class myType>
 class Client
 {
 public:
@@ -22,9 +23,12 @@ public:
   grpc::Status CreateDatabase();
   grpc::Status Backup();
   grpc::Status Restore();
-  grpc::Status Put( test::TestEntity entity, std::string *id);
-  grpc::Status Get( std::string id, test::TestEntity *entity);
+
+
+  grpc::Status Put( google::protobuf::Message *entity, std::string *id);
+  grpc::Status Get( std::string id, google::protobuf::Message *entity);
   grpc::Status Delete( std::string id);
+  grpc::Status Search( std::string entityType,std::string query,propane::PropaneEntities *entities);
 
 private:
   std::unique_ptr<propane::Database::Stub> stub_;

@@ -45,7 +45,7 @@ grpc::Status Client::CreateDatabase()
     return stub_->CreateDatabase(&context, request, &response);
 }
 
-grpc::Status Client::Put(test::TestEntity item, std::string *id)
+grpc::Status Client::Put(google::protobuf::Message *item, std::string *id)
 {
     ClientContext context;
     context.AddMetadata("database-name", databaseName);
@@ -53,7 +53,7 @@ grpc::Status Client::Put(test::TestEntity item, std::string *id)
     propane::PropanePut request;
     propane::PropaneEntity *entity = new propane::PropaneEntity();
     Any *anyMessage = new Any();
-    anyMessage->PackFrom(item);
+    anyMessage->PackFrom(*item);
     entity->set_allocated_data(anyMessage);
     request.set_allocated_entity(entity);
     auto status = stub_->Put(&context, request, &response);
@@ -63,7 +63,7 @@ grpc::Status Client::Put(test::TestEntity item, std::string *id)
     return status;
 }
 
-grpc::Status Client::Get(std::string id, test::TestEntity *entity)
+grpc::Status Client::Get(std::string id, google::protobuf::Message *entity)
 {
     ClientContext context;
     context.AddMetadata("database-name", "test");
@@ -92,6 +92,18 @@ grpc::Status Client::Delete(std::string id)
     request.set_id(id);
 
     return stub_->Delete(&context, request, &response);
+}
+
+grpc::Status Client::Search(std::string entityType, std::string query, propane::PropaneEntities *entities)
+{
+    ClientContext context;
+    propane::PropaneSearch request;
+    request.set_entitytype(entityType);
+    request.set_query(query);
+    propane::PropaneEntities *response;
+    grpc::Status status= stub_->Search(&context, request, response);
+    entities=response;
+    return status;
 }
 
 grpc::Status Client::Backup()
