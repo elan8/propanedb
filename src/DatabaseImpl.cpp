@@ -287,8 +287,8 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
   // request->entitytype()
   // Any any = (request->entity()).data();
   // string typeUrl = any.type_url();
-  // string typeName = Util::getTypeName(typeUrl);
-  const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(request->entitytype());
+   string requestTypeName = Util::getTypeName(request->entitytype());
+  const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(requestTypeName);
   if (descriptor == nullptr)
   {
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
@@ -302,23 +302,31 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
     LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, "Query error:" + query.getErrorMessage());
   }
+
+    LOG(INFO) << "query completed" << endl;
+
   reply->clear_entities();
   google::protobuf::RepeatedPtrField<::propane::PropaneEntity> *entities = reply->mutable_entities();
   for (it->Seek(""); it->Valid(); it->Next())
   {
+    //LOG(INFO) << "seek iteration" << endl;
     google::protobuf::Any *any = new Any();
     any->ParseFromString(it->value().ToString());
     string typeUrl = any->type_url();
     string typeName = Util::getTypeName(typeUrl);
-    if (IsCorrectEntityType(any, request->entitytype()))
+    LOG(INFO) << "seek iteration: typeName="<< typeName << endl;
+    if (IsCorrectEntityType(any, requestTypeName))
     {
+       LOG(INFO) << "correct entity type" << endl;
       const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
       if (descriptor != nullptr)
       {
+        //LOG(INFO) << "Unpack Any to Message" << endl;
         google::protobuf::Message *message = dmf.GetPrototype(descriptor)->New();
         any->UnpackTo(message);
         if (query.isMatch(descriptor, message))
         {
+          LOG(INFO) << "Query: isMatch" << endl;
           propane::PropaneEntity *entity = entities->Add();
           entity->set_allocated_data(any);
           if (debug)

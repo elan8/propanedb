@@ -75,12 +75,10 @@ protected:
 
   void TearDown() override
   {
-    // You can do clean-up work that doesn't throw exceptions here.
     LOG(INFO) << "SystemTest: Stop server" << std::endl;
     std::cout << "Killing child pid: " << child_pid << std::endl;
     kill(child_pid, SIGKILL);
     delete client;
-
     try
     {
       if (boost::filesystem::exists(dir))
@@ -102,34 +100,34 @@ protected:
   Client *client;
 };
 
-// TEST_F(SystemTest, PutGet)
-// {
+TEST_F(SystemTest, PutGet)
+{
 
-//   LOG(INFO) << "SystemTest: Create database" << std::endl;
-//   auto status = client->CreateDatabase();
+  LOG(INFO) << "SystemTest: Create database" << std::endl;
+  auto status = client->CreateDatabase();
 
-//   std::string id;
+  std::string id;
 
-//   test::TestEntity item;
-//   string description("Test1");
-//   item.set_description(description);
+  test::TestEntity item;
+  string description("Test1");
+  item.set_description(description);
 
-//   status = client->Put(item, &id);
-//   LOG(INFO) << "SystemTest: ID=" << id << std::endl;
+  status = client->Put((google::protobuf::Message *)&item, &id);
+  LOG(INFO) << "SystemTest: ID=" << id << std::endl;
 
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Get 1" << std::endl;
-//     test::TestEntity item2;
-//     status = client->Get(id, &item2);
-//     EXPECT_EQ(item2.description(), "Test1");
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-// }
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Get 1" << std::endl;
+    test::TestEntity item2;
+    status = client->Get(id, &item2);
+    EXPECT_EQ(item2.description(), "Test1");
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+}
 
 TEST_F(SystemTest, FindBooks)
 {
@@ -166,8 +164,8 @@ TEST_F(SystemTest, FindBooks)
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-  status = client->Put((google::protobuf::Message*)&book2, &id);
-    if (status.ok())
+  status = client->Put((google::protobuf::Message *)&book2, &id);
+  if (status.ok())
   {
     LOG(INFO) << "SystemTest: Get book 2" << std::endl;
     test::Book book2a;
@@ -176,144 +174,171 @@ TEST_F(SystemTest, FindBooks)
   }
   else
   {
+  
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+    EXPECT_EQ(status.ok(), true);
+
+  if (status.ok())
+  {
+
+    //get all books
+    LOG(INFO) << "SystemTest: Find books" << std::endl;
+    test::Book book;
+    Any anyMessage;
+    anyMessage.PackFrom(book);
+    propane::PropaneEntities *entities = new propane::PropaneEntities();
+
+    LOG(INFO) << "SystemTest: get all books" << std::endl;
+    status = client->Search(anyMessage.type_url(), "*", entities);
+    if (status.ok())
+    {
+      LOG(INFO) << "SystemTest: books=" << std::endl;
+       LOG(INFO) << "Number of entities in search result: "<< entities->entities_size() << std::endl;
+      EXPECT_EQ(entities->entities_size(),2);
+    }
+    else
+    {
+      LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+    }
+      EXPECT_EQ(status.ok(), true);
+
+      LOG(INFO) << "SystemTest: get 'hour game' " << std::endl;
+    status = client->Search(anyMessage.type_url(), "title=='hour game'", entities);
+    if (status.ok())
+    {
+       LOG(INFO) << "Number of entities in search result: "<< entities->entities_size() << std::endl;
+      EXPECT_EQ(entities->entities_size(),1);
+    }
+    else
+    {
+      LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+    }
+      EXPECT_EQ(status.ok(), true);
+
+    //get all authors
+    test::Author author;
+    //Any anyMessage;
+    anyMessage.PackFrom(author);
+    propane::PropaneEntities *entities2 = new propane::PropaneEntities();
+
+    LOG(INFO) << "SystemTest: get all authors" << std::endl;
+    status = client->Search(anyMessage.type_url(), "*", entities2);
+    if (status.ok())
+    {
+      LOG(INFO) << "SystemTest: authors=" << std::endl;
+      LOG(INFO) << entities2->entities_size() << std::endl;
+      EXPECT_EQ(entities2->entities_size(),1);
+
+    }
+    else
+    {
+      LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+    }
+
+  }
+}
+
+TEST_F(SystemTest, BackupRestore)
+{
+
+  LOG(INFO) << "SystemTest: Create database" << std::endl;
+  auto status = client->CreateDatabase();
+
+  std::string id;
+
+  test::TestEntity item;
+  string description("Test1");
+  item.set_description(description);
+
+  status = client->Put((google::protobuf::Message *)&item, &id);
+  LOG(INFO) << "SystemTest: ID=" << id << std::endl;
+
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Get 1" << std::endl;
+    test::TestEntity item2;
+    status = client->Get(id, &item2);
+    EXPECT_EQ(item2.description(), "Test1");
+  }
+  else
+  {
     EXPECT_EQ(status.ok(), true);
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-    if (status.ok())
+  if (status.ok())
   {
-    LOG(INFO) << "SystemTest: Find books" << std::endl;
-    test::Book book;
-   Any anyMessage ;
-    anyMessage.PackFrom(book);
-    propane::PropaneEntities* entities;
-
-//get all books
-  LOG(INFO) << "SystemTest: URL=" << anyMessage.type_url()<< std::endl;
-    status = client->Search(anyMessage.type_url(),"*", entities);
-
-    if (status.ok())
-  {
-    // LOG(INFO) << "SystemTest: Get book 2" << std::endl;
-    // test::Book book2a;
-    // status = client->Get(id, &book2a);
-    // EXPECT_EQ(book2a.title(), book2.title());
+    LOG(INFO) << "SystemTest: Backup" << std::endl;
+    status = client->Backup();
   }
   else
   {
-    //EXPECT_EQ(status.ok(), true);
+    EXPECT_EQ(status.ok(), true);
     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
-    //LOG(INFO) << "SystemTest: Entities" << std::endl;
-    //auto entities2 = entities->entities_size()
-     //LOG(INFO) << entities->entities_size() << std::endl;
-    //EXPECT_EQ(book2a.title(), book2.title());
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Get 2" << std::endl;
+    test::TestEntity item3;
+    status = client->Get(id, &item3);
+    EXPECT_EQ(item3.description(), "Test1");
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
   }
 
+  LOG(INFO) << "SystemTest: Delete entity with ID=" << id << std::endl;
+  status = client->Delete(id);
 
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Item deleted" << std::endl;
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+
+  //check that item is removed from database
+  LOG(INFO) << "SystemTest: Get removed item" << std::endl;
+  test::TestEntity item3;
+  auto status2 = client->Get(id, &item3);
+  EXPECT_EQ(status2.ok(), false);
+  //LOG(INFO) << "Get: error code" << status2.error_message() << std::endl;
+
+  if (status.ok())
+  {
+    LOG(INFO) << "SystemTest: Restore" << std::endl;
+    status = client->Restore();
+  }
+  else
+  {
+    EXPECT_EQ(status.ok(), true);
+    LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
+  }
+
+  // std::this_thread::sleep_for(std::chrono::milliseconds(6000));
+
+  LOG(INFO) << "SystemTest: Get " << id << std::endl;
+  test::TestEntity item4;
+  status = client->Get(id, &item4);
+  EXPECT_EQ(status.ok(), true);
+  if (status.ok())
+  {
+    EXPECT_EQ(item4.description(), "Test1");
+    // LOG(INFO) << "Test completed succesfully!" << std::endl;
+  }
+  else
+  {
+
+    LOG(INFO) << "Get: error code" << status.error_message() << std::endl;
+  }
 }
-
-// TEST_F(SystemTest, BackupRestore)
-// {
-
-//   LOG(INFO) << "SystemTest: Create database" << std::endl;
-//   auto status = client->CreateDatabase();
-
-//   std::string id;
-
-//   test::TestEntity item;
-//   string description("Test1");
-//   item.set_description(description);
-
-//   status = client->Put(item, &id);
-//   LOG(INFO) << "SystemTest: ID=" << id << std::endl;
-
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Get 1" << std::endl;
-//     test::TestEntity item2;
-//     status = client->Get(id, &item2);
-//     EXPECT_EQ(item2.description(), "Test1");
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Backup" << std::endl;
-//     status = client->Backup();
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Get 2" << std::endl;
-//     test::TestEntity item3;
-//     status = client->Get(id, &item3);
-//     EXPECT_EQ(item3.description(), "Test1");
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-
-//   LOG(INFO) << "SystemTest: Delete entity with ID=" << id << std::endl;
-//   status = client->Delete(id);
-
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Item deleted" << std::endl;
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-
-//   //check that item is removed from database
-//   LOG(INFO) << "SystemTest: Get removed item" << std::endl;
-//   test::TestEntity item3;
-//   auto status2 = client->Get(id, &item3);
-//   EXPECT_EQ(status2.ok(), false);
-//   //LOG(INFO) << "Get: error code" << status2.error_message() << std::endl;
-
-//   if (status.ok())
-//   {
-//     LOG(INFO) << "SystemTest: Restore" << std::endl;
-//     status = client->Restore();
-//   }
-//   else
-//   {
-//     EXPECT_EQ(status.ok(), true);
-//     LOG(INFO) << "SystemTest: error" << status.error_message() << std::endl;
-//   }
-
-//   // std::this_thread::sleep_for(std::chrono::milliseconds(6000));
-
-//   LOG(INFO) << "SystemTest: Get " << id << std::endl;
-//   test::TestEntity item4;
-//   status = client->Get(id, &item4);
-//   EXPECT_EQ(status.ok(), true);
-//   if (status.ok())
-//   {
-//     EXPECT_EQ(item4.description(), "Test1");
-//     // LOG(INFO) << "Test completed succesfully!" << std::endl;
-//   }
-//   else
-//   {
-
-//     LOG(INFO) << "Get: error code" << status.error_message() << std::endl;
-//   }
-// }
 
 int main(int argc, char **argv)
 {

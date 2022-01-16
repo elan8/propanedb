@@ -36,6 +36,7 @@ public:
     Query();
     bool hasError();
     void setError(const std::string& message);
+    void clearError();
     std::string getErrorMessage();
     bool isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message);
 };

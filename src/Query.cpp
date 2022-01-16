@@ -1,11 +1,13 @@
 #include "Query.hpp"
+#include <glog/logging.h>
 
-Query::Query(): error(false), errorMessage(),queryName(),queryValue()
+Query::Query(): error(true), errorMessage(),queryName(),queryValue()
 {
     // error = false;
     // errorMessage = "";
     // queryName = "";
     // queryValue = "";
+    this->setError("Query not succesfully parsed.");
 }
 
 void Query::setName(const std::string& name)
@@ -28,6 +30,12 @@ void Query::setError(const std::string& message)
     errorMessage = message;
 }
 
+void Query::clearError()
+{
+    error = false;
+    errorMessage = "";
+}
+
 bool Query::hasError()
 {
     return error;
@@ -40,7 +48,14 @@ std::string Query::getErrorMessage()
 
 bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message)
 {
+     LOG(INFO) << "isMatch" << std::endl;
     bool output = false;
+
+  if (error)
+    {
+        return false;
+    }
+
     if (queryOp == Query::Star)
     {
         return true;
@@ -53,6 +68,7 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     {
     case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
     {
+         LOG(INFO) << "Query : bool " << std::endl;
         bool value = reflection->GetBool(*message, fd);
         bool desiredValue = false;
  
@@ -85,7 +101,11 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
 
     case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
     {
+        
         std::string value = reflection->GetString(*message, fd);
+        queryValue.erase(remove( queryValue.begin(), queryValue.end(), '\'' ),queryValue.end());
+         LOG(INFO) << "Query string : value="<< value << std::endl;
+         LOG(INFO) << "Query string : queryValue="<< queryValue << std::endl;
         if (queryOp == Query::Equal)
         {
             if (value.compare(queryValue) == 0)

@@ -97,12 +97,13 @@ grpc::Status Client::Delete(std::string id)
 grpc::Status Client::Search(std::string entityType, std::string query, propane::PropaneEntities *entities)
 {
     ClientContext context;
+    context.AddMetadata("database-name", "test");
     propane::PropaneSearch request;
     request.set_entitytype(entityType);
     request.set_query(query);
-    propane::PropaneEntities *response;
-    grpc::Status status= stub_->Search(&context, request, response);
-    entities=response;
+    grpc::Status status= stub_->Search(&context, request, entities);
+    LOG(INFO) << "Search complete: Status=" << status.error_message() << std::endl;
+
     return status;
 }
 

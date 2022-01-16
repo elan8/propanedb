@@ -3,17 +3,18 @@
 #include <tao/pegtl.hpp>
 #include <tao/pegtl/contrib/analyze.hpp>
 #include <tao/pegtl/contrib/trace.hpp>
+//#include <tao/pegtl/contrib/icu/utf8.hpp>
 
 using namespace tao::pegtl;
 
 namespace application
 {
-
-    struct fieldname : plus<alnum>
+    //struct fieldname : seq< one<'\''> , plus<sor<alnum,blank>>,one<'\''>  >
+    struct fieldname :  plus<alnum>
     {
     };
 
-    struct value : plus<alnum>
+    struct value : seq< one<'\''> , plus<sor<alnum,blank>>,one<'\''>  >//plus<alnum>
     {
     };
 
@@ -40,7 +41,7 @@ namespace application
     {
     };
 
-    struct expression : sor<seq<fieldname, op, value, eof>, star>
+    struct expression : sor<seq<fieldname, op, value>, star>
     {
     };
 
@@ -104,7 +105,8 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = grammar" << std::endl;
+            LOG(INFO) << "Action = grammar:"<< in.string() << std::endl;
+            out.clearError();
         }
     };
 
@@ -115,7 +117,7 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = fieldname" << std::endl;
+            LOG(INFO) << "Action = fieldname: "<< in.string() << std::endl;
 
             out.setName(in.string());
         }
@@ -127,7 +129,7 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = value" << std::endl;
+            LOG(INFO) << "Action = value: "<< in.string() << std::endl;
             out.setValue(in.string());
         }
     };

@@ -28,7 +28,7 @@ Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
   if (search != map.end())
   {
     const char *data = (search->second).data();
-    LOG(INFO) << "length= " << (search->second).length();
+    //LOG(INFO) << "length= " << (search->second).length();
     metadata.databaseName = std::string(data, (search->second).length());
     if (debug)
     {
