@@ -1,15 +1,15 @@
 #!/bin/bash
 mkdir dependencies 
 cd  dependencies
+sudo apt-get install zlib1g-dev libssl-dev libgflags-dev 
+
 
 #build Boost
 if [ ! -f boost_1_76_0.tar.bz2 ]; then
-    echo "File not found!"
     wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2
 fi
 
 if [ ! -d "./boost_1_76_0 " ]; then 
-    echo "Folder not found!"
     tar --bzip2 -xf boost_1_76_0.tar.bz2
 fi
 cd boost_1_76_0
@@ -77,10 +77,7 @@ make
 make install
 cd ..
 cd ..
-#build Poco C++
-#build POCO C++ libraries
-#git clone -b master https://github.com/pocoproject/poco.git 
-#cd poco
+
 
 wget https://pocoproject.org/releases/poco-1.11.1/poco-1.11.1-all.tar.gz 
 tar -xzf poco-1.11.1-all.tar.gz 

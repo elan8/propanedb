@@ -1,4 +1,4 @@
-FROM ghcr.io/elan8/propanedb-base-alpine as builder
+FROM ghcr.io/elan8/propanedb-base-ubuntu  as builder
 WORKDIR /app 
 COPY CMakeLists.txt CMakeLists.txt 
 COPY protos protos
@@ -10,16 +10,19 @@ WORKDIR /app/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release .. 
 RUN make -j 2
 
-FROM alpine:3.14.1
+FROM ubuntu:20.04
+RUN apt-get update -y && apt-get -y --no-install-recommends install supervisor libgflags-dev  ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 LABEL org.opencontainers.image.source https://github.com/elan8/propanedb
 WORKDIR /app 
 RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
-RUN apk add --no-cache libstdc++ supervisor
-RUN addgroup -S propane && adduser -S propane -G propane
+RUN addgroup --system propane && adduser --system propane --ingroup propane
 RUN chown -R propane /app
 COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
 COPY --from=builder /app/build/libpropane_lib.a .
 COPY --from=builder /app/build/server .
+ENV LD_LIBRARY_PATH="/usr/lib;/usr/local/lib:${LD_LIBRARY_PATH}"
 RUN chmod 777 /app/server *
 USER propane
 EXPOSE 50051

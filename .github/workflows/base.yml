@@ -1,4 +1,4 @@
-name: Build base images
+name: Build base image
 # Controls when the workflow will run
 on:
   workflow_dispatch:  
@@ -16,15 +16,15 @@ jobs:
       - uses: actions/checkout@v2
       - name: Log in to registry
         run: echo "${{ secrets.PAT }}" | docker login ghcr.io -u USERNAME --password-stdin    
-      - name: Build Docker Base Alpine
-        run: ./scripts/buildDockerBaseAlpine.sh
+      - name: Build Docker Base Ubuntu
+        run: ./scripts/buildDockerBaseUbuntu.sh
       - name: Tag 1
-        run: docker tag propanedb-base-alpine ghcr.io/elan8/propanedb-base-alpine:latest
+        run: docker tag propanedb-base-ubuntu ghcr.io/elan8/propanedb-base-ubuntu:latest
       - name: Push 1
-        run: docker push ghcr.io/elan8/propanedb-base-alpine:latest
-      - name: Build Docker Base Debian
-        run: ./scripts/buildDockerBaseDebian.sh
-      - name: Tag 2
-        run: docker tag propanedb-base-debian ghcr.io/elan8/propanedb-base-debian:latest                
-      - name: Push 2
-        run: docker push ghcr.io/elan8/propanedb-base-debian:latest          
+        run: docker push ghcr.io/elan8/propanedb-base-ubuntu:latest
+      # - name: Build Docker Base Debian
+      #   run: ./scripts/buildDockerBaseDebian.sh
+      # - name: Tag 2
+      #   run: docker tag propanedb-base-debian ghcr.io/elan8/propanedb-base-debian:latest                
+      # - name: Push 2
+      #   run: docker push ghcr.io/elan8/propanedb-base-debian:latest          
