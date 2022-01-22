@@ -10,11 +10,11 @@ using namespace tao::pegtl;
 namespace application
 {
     //struct fieldname : seq< one<'\''> , plus<sor<alnum,blank>>,one<'\''>  >
-    struct fieldname :  plus<alnum>
+    struct fieldname : plus<alnum>
     {
     };
 
-    struct value : seq< one<'\''> , plus<sor<alnum,blank>>,one<'\''>  >//plus<alnum>
+    struct value : seq<one<'\''>, plus<sor<alnum, blank>>, one<'\''>> //plus<alnum>
     {
     };
 
@@ -61,7 +61,9 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Operator = STAR" << std::endl;
+
+            // LOG(INFO) << "Operator = STAR" << std::endl;
+
             out.setComparisonOperator(Query::Star);
         }
     };
@@ -72,7 +74,9 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Operator = EQUAL" << std::endl;
+
+            // LOG(INFO) << "Operator = EQUAL" << std::endl;
+
             out.setComparisonOperator(Query::Equal);
         }
     };
@@ -83,7 +87,9 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Operator = NOT EQUAL" << std::endl;
+
+            // LOG(INFO) << "Operator = NOT EQUAL" << std::endl;
+
             out.setComparisonOperator(Query::NotEqual);
         }
     };
@@ -94,7 +100,8 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = expression" << std::endl;
+
+            // LOG(INFO) << "Action = expression" << std::endl;
         }
     };
 
@@ -105,7 +112,9 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = grammar:"<< in.string() << std::endl;
+
+            // LOG(INFO) << "Action = grammar:" << in.string() << std::endl;
+
             out.clearError();
         }
     };
@@ -117,7 +126,8 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = fieldname: "<< in.string() << std::endl;
+
+            // LOG(INFO) << "Action = fieldname: " << in.string() << std::endl;
 
             out.setName(in.string());
         }
@@ -129,7 +139,9 @@ namespace application
         template <typename ActionInput>
         static void apply(const ActionInput &in, Query &out)
         {
-            LOG(INFO) << "Action = value: "<< in.string() << std::endl;
+
+            // LOG(INFO) << "Action = value: " << in.string() << std::endl;
+
             out.setValue(in.string());
         }
     };

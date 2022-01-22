@@ -57,13 +57,13 @@ int main(int argc, char **argv)
   }
 
 
-char* path = std::getenv("PATH");
+char* path = std::getenv("DATABASEPATH");
   if (path)
-  {
-   
-      LOG(INFO) << "PATH="<< path << '\n';
-      databasePath=path;
+  { 
   
+      LOG(INFO) << "DATABASEPATH="<< path << '\n';
+  
+      databasePath=path;
   }
 
 

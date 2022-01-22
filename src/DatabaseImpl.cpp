@@ -123,8 +123,10 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name)
   p1 += databasePath;
   p1 /= name;
   string path = p1.generic_string();
-  LOG(INFO) << "Database path = " << path << endl;
-
+  if (debug)
+  {
+    LOG(INFO) << "Database path = " << path << endl;
+  }
   if (name.length() == 0)
   {
     LOG(ERROR) << "Error: Database name=empty" << endl;
@@ -257,7 +259,10 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata, const propane::PropaneId *
   if (s.ok())
   {
     ROCKSDB_NAMESPACE::Status s = GetDatabase(databaseName)->Delete(WriteOptions(), request->id());
-    LOG(INFO) << "Delete status= " << s.ToString() << endl;
+    if (debug)
+    {
+      LOG(INFO) << "Delete status= " << s.ToString() << endl;
+    }
     if (!s.ok())
     {
       return grpc::Status(grpc::StatusCode::ABORTED, "Could not delete object");
@@ -265,7 +270,10 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata, const propane::PropaneId *
   }
   else
   {
-    LOG(INFO) << "Delete status= " << s.ToString() << endl;
+    if (debug)
+    {
+      LOG(INFO) << "Delete status= " << s.ToString() << endl;
+    }
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "No object with this ID in database");
   }
   return grpc::Status::OK;
@@ -287,7 +295,7 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
   // request->entitytype()
   // Any any = (request->entity()).data();
   // string typeUrl = any.type_url();
-   string requestTypeName = Util::getTypeName(request->entitytype());
+  string requestTypeName = Util::getTypeName(request->entitytype());
   const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(requestTypeName);
   if (descriptor == nullptr)
   {
@@ -302,8 +310,10 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
     LOG(ERROR) << "Query error: =: " << query.getErrorMessage() << std::endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, "Query error:" + query.getErrorMessage());
   }
-
+  if (debug)
+  {
     LOG(INFO) << "query completed" << endl;
+  }
 
   reply->clear_entities();
   google::protobuf::RepeatedPtrField<::propane::PropaneEntity> *entities = reply->mutable_entities();
@@ -314,10 +324,16 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
     any->ParseFromString(it->value().ToString());
     string typeUrl = any->type_url();
     string typeName = Util::getTypeName(typeUrl);
-    LOG(INFO) << "seek iteration: typeName="<< typeName << endl;
+    if (debug)
+    {
+      LOG(INFO) << "seek iteration: typeName=" << typeName << endl;
+    }
     if (IsCorrectEntityType(any, requestTypeName))
     {
-       LOG(INFO) << "correct entity type" << endl;
+      if (debug)
+      {
+        LOG(INFO) << "correct entity type" << endl;
+      }
       const google::protobuf::Descriptor *descriptor = pool->FindMessageTypeByName(typeName);
       if (descriptor != nullptr)
       {
@@ -326,7 +342,10 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata, const propane::PropaneSear
         any->UnpackTo(message);
         if (query.isMatch(descriptor, message))
         {
-          LOG(INFO) << "Query: isMatch" << endl;
+          if (debug)
+          {
+            LOG(INFO) << "Query: isMatch" << endl;
+          }
           propane::PropaneEntity *entity = entities->Add();
           entity->set_allocated_data(any);
           if (debug)

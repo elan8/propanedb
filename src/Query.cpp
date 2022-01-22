@@ -1,7 +1,7 @@
 #include "Query.hpp"
 #include <glog/logging.h>
 
-Query::Query(): error(true), errorMessage(),queryName(),queryValue()
+Query::Query() : error(true), errorMessage(), queryName(), queryValue()
 {
     // error = false;
     // errorMessage = "";
@@ -10,11 +10,11 @@ Query::Query(): error(true), errorMessage(),queryName(),queryValue()
     this->setError("Query not succesfully parsed.");
 }
 
-void Query::setName(const std::string& name)
+void Query::setName(const std::string &name)
 {
     queryName = name;
 }
-void Query::setValue(const std::string& value)
+void Query::setValue(const std::string &value)
 {
     queryValue = value;
 }
@@ -24,7 +24,7 @@ void Query::setComparisonOperator(ComparisonOperator op)
     queryOp = op;
 }
 
-void Query::setError(const std::string& message)
+void Query::setError(const std::string &message)
 {
     error = true;
     errorMessage = message;
@@ -48,10 +48,10 @@ std::string Query::getErrorMessage()
 
 bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::protobuf::Message *message)
 {
-     LOG(INFO) << "isMatch" << std::endl;
+
     bool output = false;
 
-  if (error)
+    if (error)
     {
         return false;
     }
@@ -68,12 +68,12 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
     {
     case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
     {
-         LOG(INFO) << "Query : bool " << std::endl;
+        LOG(INFO) << "Query : bool " << std::endl;
         bool value = reflection->GetBool(*message, fd);
         bool desiredValue = false;
- 
-        const std::string& q = queryValue;
-        if ( q.find("true")!=std::string::npos)
+
+        const std::string &q = queryValue;
+        if (q.find("true") != std::string::npos)
         {
             desiredValue = true;
         }
@@ -101,11 +101,11 @@ bool Query::isMatch(const google::protobuf::Descriptor *descriptor, google::prot
 
     case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
     {
-        
+
         std::string value = reflection->GetString(*message, fd);
-        queryValue.erase(remove( queryValue.begin(), queryValue.end(), '\'' ),queryValue.end());
-         LOG(INFO) << "Query string : value="<< value << std::endl;
-         LOG(INFO) << "Query string : queryValue="<< queryValue << std::endl;
+        queryValue.erase(remove(queryValue.begin(), queryValue.end(), '\''), queryValue.end());
+        LOG(INFO) << "Query string : value=" << value << std::endl;
+        LOG(INFO) << "Query string : queryValue=" << queryValue << std::endl;
         if (queryOp == Query::Equal)
         {
             if (value.compare(queryValue) == 0)
