@@ -19,8 +19,12 @@ WORKDIR /app
 RUN mkdir /var/rocksdb && chmod 777 /var/rocksdb
 RUN addgroup --system propane && adduser --system propane --ingroup propane
 RUN chown -R propane /app
-COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
-COPY --from=builder /app/build/libpropane_lib.a .
+# COPY --from=builder /app/dependencies/deploy/lib/* /usr/local/lib/
+COPY --from=builder /app/dependencies/deploy/lib/libboost* /usr/local/lib/
+COPY --from=builder /app/dependencies/deploy/lib/libglog* /usr/local/lib/
+COPY --from=builder /app/dependencies/deploy/lib/libPocoFoundation* /usr/local/lib/
+COPY --from=builder /app/dependencies/deploy/lib/libPocoZip* /usr/local/lib/
+# COPY --from=builder /app/build/libpropane_lib.a .
 COPY --from=builder /app/build/server .
 ENV LD_LIBRARY_PATH="/usr/lib;/usr/local/lib:${LD_LIBRARY_PATH}"
 RUN chmod 777 /app/server *
