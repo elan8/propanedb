@@ -8,7 +8,7 @@ COPY cmake cmake
 RUN mkdir build 
 WORKDIR /app/build 
 RUN cmake -DCMAKE_BUILD_TYPE=Release .. 
-RUN make -j 2
+RUN make
 
 FROM ubuntu:20.04
 RUN apt-get update -y && apt-get -y --no-install-recommends install supervisor libgflags-dev  ca-certificates \

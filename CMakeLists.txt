@@ -2,15 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 project(PropaneDB)
 include(FetchContent)
 
+option(BUILD_TEST "Build the unit tests" OFF)
+
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 11)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+
 
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
@@ -103,7 +99,7 @@ add_library(propane_lib
   src/FileWriter.cpp 
   
   )
-  add_dependencies(propane_lib protoGenerate)
+add_dependencies(propane_lib protoGenerate)
 target_link_libraries(propane_lib
   rocksdb 
   pthread 
@@ -117,6 +113,23 @@ target_link_libraries(propane_lib
   )
 
 
+add_executable(server src/Server.cpp  )
+add_dependencies(server propane_lib )
+target_link_libraries(server 
+propane_lib
+gRPC::grpc++_reflection
+gRPC::grpc++
+${Protobuf_LIBRARIES})
+
+if(BUILD_TEST)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 add_library(test_proto
   ${test_srcs}
   ${test_hdrs}
@@ -125,15 +138,6 @@ target_link_libraries(test_proto
 gRPC::grpc++_reflection
   gRPC::grpc++
   ${Protobuf_LIBRARIES})  
-
-add_executable(server src/Server.cpp  )
-add_dependencies(server propane_lib test_proto)
-target_link_libraries(server 
-propane_lib
-test_proto
-gRPC::grpc++_reflection
-gRPC::grpc++
-${Protobuf_LIBRARIES})
 
 enable_testing()
 
@@ -154,6 +158,7 @@ target_link_libraries(
   gRPC::grpc++
   ${Protobuf_LIBRARIES})
 
+
 add_executable(
   systemTest
   test/SystemTest.cpp
@@ -172,6 +177,11 @@ target_link_libraries(
   gRPC::grpc++
   ${Protobuf_LIBRARIES})
 
-include(GoogleTest)
-gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
+
+  include(GoogleTest)
+  gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
+  # gtest_discover_tests(systemTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
+endif()
+
+
 
