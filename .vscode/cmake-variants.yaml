@@ -1,0 +1,17 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    debugCoverage:
+      short: Debug with coverage
+      long: Emit debug information + measure coverage
+      buildType: Debug   
+      settings:
+        USE_GCOV: yes   
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: Release
