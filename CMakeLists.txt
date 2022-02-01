@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(PropaneDB)
 include(FetchContent)
-
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include (CodeCoverage)
 
@@ -9,6 +8,7 @@ include (CodeCoverage)
 
 # GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 11)
+
 
 
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
@@ -123,6 +123,10 @@ propane_lib
 gRPC::grpc++_reflection
 gRPC::grpc++
 ${Protobuf_LIBRARIES})
+
+if(USE_CLANG_TIDY)
+  set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
+endif(USE_CLANG_TIDY)
 
 if(USE_GCOV)
   append_coverage_compiler_flags()

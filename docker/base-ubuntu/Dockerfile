@@ -77,5 +77,9 @@ WORKDIR /app/dependencies
 RUN wget --progress=dot:giga https://pocoproject.org/releases/poco-1.11.1/poco-1.11.1-all.tar.gz && \
     tar -xzf poco-1.11.1-all.tar.gz && cd poco-1.11.1-all && \
     mkdir build-cmake && cd build-cmake && cmake .. -DCMAKE_INSTALL_PREFIX=../../deploy/ -DCMAKE_BUILD_TYPE=Release  && make install
+#install clang-tidy
+RUN apt-get update -y && apt-get -y --no-install-recommends install clang-tidy\
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
