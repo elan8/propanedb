@@ -29,6 +29,8 @@ jobs:
           password: ${{ secrets.PAT }}
       - name: Build Docker test
         run: ./scripts/buildDockerTest.sh
+        env: # Or as an environment variable
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
   codacy-security-scan:
     name: Codacy Security Scan
     runs-on: ubuntu-latest

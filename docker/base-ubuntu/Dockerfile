@@ -1,5 +1,6 @@
 FROM ubuntu:20.04
-RUN apt-get update -y && apt-get -y --no-install-recommends install zlib1g-dev libssl-dev wget build-essential ca-certificates \
+RUN ln -fs /usr/share/zoneinfo/Europe/Amsterdam /etc/localtime
+RUN apt-get update -y && apt-get -y --no-install-recommends install zlib1g-dev libssl-dev wget build-essential ca-certificates gcovr\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
