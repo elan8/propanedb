@@ -32,14 +32,19 @@ jobs:
         env: # Or as an environment variable
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
   codacy-security-scan:
-    name: Codacy Security Scan
+    name: Codacy Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@main
-      - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@master        
-      - name: Run Codacy Analysis CLI
+      - name: Run Codacy Analysis 
+        uses: codacy/codacy-analysis-cli-action@master    
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          upload: true
+          max-allowed-issues: 2147483647
+
+      - name: Run Codacy Analysis for Github
         uses: codacy/codacy-analysis-cli-action@master
         with:
           output: results.sarif
