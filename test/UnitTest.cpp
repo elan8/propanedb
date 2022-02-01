@@ -119,6 +119,96 @@ TEST_F(UnitTest, PutGet)
 }
 
 
+TEST_F(UnitTest, SearchAll)
+{
+  std::string id;
+
+  test::TestEntity item1;
+  string description1("Test1");
+  item1.set_description(description1);
+
+  test::TestEntity item2;
+  string description2("Test2");
+  item2.set_description(description2);
+
+  Metadata meta;
+  meta.databaseName = "test";
+
+  {
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
+
+    google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    propane::PropaneDatabase request;
+    request.set_allocated_descriptor_set(fd);
+    request.set_databasename("test");
+    propane::PropaneStatus reply;
+    grpc::Status s = db->CreateDatabase(&meta, &request, &reply);
+  }
+
+  {
+    propane::PropanePut request;
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(item1);
+
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
+    propane::PropaneId reply;
+
+    grpc::Status s = db->Put(&meta, &request, &reply);
+    LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+  {
+    propane::PropanePut request;
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(item2);
+
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    request.set_databasename("test");
+    propane::PropaneId reply;
+
+    grpc::Status s = db->Put(&meta, &request, &reply);
+    LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
+
+  {
+        Any *anyMessage = new Any();
+    anyMessage->PackFrom(item1);
+
+    propane::PropaneSearch request;
+    request.set_entitytype(anyMessage->type_url());
+    request.set_query("*");
+
+    propane::PropaneEntities reply;
+    //Metadata meta;
+    grpc::Status s = db->Search(&meta, &request, &reply);
+
+    EXPECT_EQ(s.ok(), true);
+    if(! s.ok()){
+      LOG(ERROR) << "Search: error= " << s.error_message() << std::endl;
+    }
+    EXPECT_EQ(reply.entities().size(), 2);
+    LOG(INFO) << "Object 1= " << reply.entities()[0].DebugString()<< std::endl;
+    LOG(INFO) << "Object 2= " << reply.entities()[1].DebugString()<< std::endl;
+  }
+
+ 
+}
+
+
 int main(int argc, char **argv)
 {
   FLAGS_logtostderr = 1;
