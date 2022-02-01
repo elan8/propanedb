@@ -1,4 +1,7 @@
 # PropaneDB
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ef0f6f06eea647c0a4471e6deb824474)](https://app.codacy.com/gh/elan8/propanedb?utm_source=github.com&utm_medium=referral&utm_content=elan8/propanedb&utm_campaign=Badge_Grade_Settings)
+
 A document database for Protocol Buffer messages with GRPC interface
 
 Ideal for GRPC microservices: 
