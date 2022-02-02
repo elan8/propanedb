@@ -2,14 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 project(PropaneDB)
 include(FetchContent)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include (CodeCoverage)
 
-# option(BUILD_TEST "Build the unit tests" OFF)
-
-# GoogleTest requires at least C++11
 set(CMAKE_CXX_STANDARD 11)
-
-
 
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy")
 list(APPEND CMAKE_PREFIX_PATH "./dependencies/deploy/lib/cmake")
@@ -124,11 +118,17 @@ gRPC::grpc++_reflection
 gRPC::grpc++
 ${Protobuf_LIBRARIES})
 
-if(USE_CLANG_TIDY)
-  set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
-endif(USE_CLANG_TIDY)
+option(USE_GCOV "Use GCOV" OFF) #OFF by default
 
-if(USE_GCOV)
+if(CMAKE_BUILD_TYPE STREQUAL Debug )
+
+  #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=clang-diagnostic-*,clang-analyzer-*")
+  #set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*,,readability-*")
+
+
+if(USE_GCOV )
+  message( "GCOV enabled" )
+  include (CodeCoverage)
   append_coverage_compiler_flags()
 
   include(ExternalProject)
@@ -154,9 +154,8 @@ if(USE_GCOV)
     )
 
 endif(USE_GCOV)
+unset(USE_GCOV CACHE) # <---- this is the important!!
 
-
-if(CMAKE_BUILD_TYPE STREQUAL Debug )
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
@@ -217,6 +216,3 @@ target_link_libraries(
   gtest_discover_tests(unitTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
   # gtest_discover_tests(systemTest PROPERTIES TIMEOUT 600 RUN_SERIAL)
 endif()
-
-
-

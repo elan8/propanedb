@@ -1,16 +1,16 @@
-#include <iostream>
-#include <memory>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <streambuf>
 #include <gtest/gtest.h>
-#include "test.pb.h"
-#include "DatabaseImpl.hpp"
+
 #include <boost/filesystem.hpp>
 #include <chrono>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <streambuf>
+#include <string>
 #include <thread>
+
+#include "DatabaseImpl.hpp"
+#include "test.pb.h"
 
 using namespace std;
 
@@ -56,7 +56,8 @@ protected:
     
   }
 
-  DatabaseImpl *db;
+  DatabaseImpl *db{};
+
 };
 
 TEST_F(UnitTest, PutGet)
@@ -208,9 +209,7 @@ TEST_F(UnitTest, SearchAll)
  
 }
 
-
-int main(int argc, char **argv)
-{
+auto main(int argc, char **argv) -> int {
   FLAGS_logtostderr = 1;
   google::InitGoogleLogging(argv[0]);
   ::testing::InitGoogleTest(&argc, argv);

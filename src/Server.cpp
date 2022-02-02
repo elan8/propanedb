@@ -26,7 +26,7 @@ bool debug = false;
 void RunServer()
 {
   std::string server_address("0.0.0.0:50051");
-  DatabaseServiceImpl service(databasePath, backupPath,debug);
+  DatabaseServiceImpl service(databasePath, backupPath, debug);
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   google::InitGoogleLogging(argv[0]);
   FLAGS_logtostderr = 1;
 
-  char* flag = std::getenv("DEBUG");
+  char *flag = std::getenv("DEBUG");
   if (flag)
   {
     if (std::string("true").compare(flag) == 0)
@@ -56,16 +56,12 @@ int main(int argc, char **argv)
     }
   }
 
-
-char* path = std::getenv("DATABASEPATH");
+  char *path = std::getenv("DATABASEPATH");
   if (path)
-  { 
-  
-      LOG(INFO) << "DATABASEPATH="<< path << '\n';
-  
-      databasePath=path;
+  {
+    LOG(INFO) << "DATABASEPATH=" << path << '\n';
+    databasePath = path;
   }
-
 
   RunServer();
   return 0;

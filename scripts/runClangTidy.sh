@@ -1,2 +1,2 @@
 #!/bin/bash
-#clang-tidy src/* -- -Idependencies/deploy/include
+clang-tidy -p=./build ./src/*.cpp
