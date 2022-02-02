@@ -66,6 +66,6 @@ public:
     grpc::Status CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
                                 propane::PropaneStatus *reply);
 
-    grpc::Status Backup(Metadata *metadata, const string databaseName, string zipFilePath);
-    grpc::Status Restore(Metadata *metadata, const string databaseName, string zipFilePath);
+    grpc::Status Backup(Metadata *metadata, const string &databaseName, const string &zipFilePath);
+    grpc::Status Restore(Metadata *metadata, const string &databaseName, const string &zipFilePath);
 };

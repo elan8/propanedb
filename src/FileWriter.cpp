@@ -53,7 +53,7 @@ void FileWriter::Write(std::string& data)
     return;
 }
 
-void FileWriter::RaiseError(const std::string action_attempted, const std::system_error& ex)
+void FileWriter::RaiseError(const std::string &action_attempted, const std::system_error& ex)
 {
     const int ec = ex.code().value();
     switch (ec) {

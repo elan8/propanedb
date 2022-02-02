@@ -9,7 +9,7 @@ class QueryParser final
 private:
     bool debug;
 public:
-    QueryParser(bool debug);
+    explicit QueryParser(bool debug);
     ~QueryParser();
     Query parseQuery(std::string query);
 };

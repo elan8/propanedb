@@ -21,8 +21,6 @@ DatabaseServiceImpl::~DatabaseServiceImpl()
 Metadata DatabaseServiceImpl::GetMetadata(ServerContext *context)
 {
   Metadata metadata;
-  std::multimap<grpc::string_ref, grpc::string_ref> data = context->client_metadata();
-
   auto map = context->client_metadata();
   auto search = map.find("database-name");
   if (search != map.end())

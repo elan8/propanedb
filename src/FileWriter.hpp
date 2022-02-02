@@ -23,5 +23,5 @@ private:
     std::ofstream m_ofs;
     bool m_no_space;
 
-    void RaiseError [[noreturn]] (const std::string action_attempted, const std::system_error& ex);
+    void RaiseError [[noreturn]] (const std::string &action_attempted, const std::system_error& ex);
 };

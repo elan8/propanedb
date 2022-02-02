@@ -371,7 +371,7 @@ bool DatabaseImpl::IsCorrectEntityType(google::protobuf::Any *any, std::string e
   return output;
 }
 
-grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string databaseName, string zipFilePath)
+grpc::Status DatabaseImpl::Backup(Metadata *metadata, const string &databaseName, const string &zipFilePath)
 {
 
   BackupEngine *backup_engine;
@@ -423,7 +423,7 @@ void DatabaseImpl::onDecompressError(const void *pSender, std::pair<const Poco::
   LOG(FATAL) << "Decompress error:" << std::endl;
 }
 
-grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string databaseName, string zipFilePath)
+grpc::Status DatabaseImpl::Restore(Metadata *metadata, const string &databaseName, const string &zipFilePath)
 {
   CloseDatabases();
   std::ifstream inp(zipFilePath, std::ios::binary);

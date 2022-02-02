@@ -23,7 +23,7 @@ class BackupReader
 {
 public:
     BackupReader(const std::string &file_name, ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer)
-        : m_file_path(file_name), mp_writer(writer), m_data(nullptr), m_size(0)
+        : m_file_path(file_name), mp_writer(writer), m_data(nullptr), m_size(0),m_id(0)
     {
         int fd = open(file_name.c_str(), O_RDONLY);
         if (-1 == fd)
