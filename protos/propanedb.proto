@@ -9,6 +9,8 @@ package propane;
 
 service Database {
   rpc CreateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
+  rpc UpdateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
+  rpc DeleteDatabase(PropaneDatabase) returns (PropaneStatus) {} 
   rpc Put (PropanePut) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
   rpc Delete (PropaneId) returns (PropaneStatus) {}
@@ -42,6 +44,7 @@ message PropaneRestoreReply{
 message PropaneDatabase{
   string databaseName = 1;
   google.protobuf.FileDescriptorSet descriptor_set = 2;
+  string newDatabaseName = 3;
 }
 
 message PropaneEntities {

@@ -40,10 +40,11 @@ private:
     string databasePath;
     string backupPath;
     google::protobuf::SimpleDescriptorDatabase *descriptorDB;
-    const google::protobuf::DescriptorPool *pool;
+    //const google::protobuf::DescriptorPool *pool;
     google::protobuf::DynamicMessageFactory dmf;
     QueryParser *queryParser;
     map<string, rocksdb::DB *> databases;
+    map<string, google::protobuf::DescriptorPool *> descriptorPools;
     bool debug;
 
     static bool IsCorrectEntityType(google::protobuf::Any *any, std::string type);
@@ -64,6 +65,10 @@ public:
     grpc::Status Search(Metadata *metadata, const propane::PropaneSearch *request,
                         propane::PropaneEntities *reply);
     grpc::Status CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
+                                propane::PropaneStatus *reply);
+                                    grpc::Status UpdateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
+                                propane::PropaneStatus *reply);
+                                    grpc::Status DeleteDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
                                 propane::PropaneStatus *reply);
 
     grpc::Status Backup(Metadata *metadata, const string &databaseName, const string &zipFilePath);

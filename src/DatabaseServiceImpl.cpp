@@ -43,6 +43,20 @@ grpc::Status DatabaseServiceImpl::CreateDatabase(ServerContext *context, const p
   return implementation->CreateDatabase(&meta, request, reply);
 }
 
+grpc::Status DatabaseServiceImpl::UpdateDatabase(ServerContext *context, const propane::PropaneDatabase *request,
+                                                 propane::PropaneStatus *reply)
+{
+  Metadata meta = this->GetMetadata(context);
+  return implementation->UpdateDatabase(&meta, request, reply);
+}
+
+grpc::Status DatabaseServiceImpl::DeleteDatabase(ServerContext *context, const propane::PropaneDatabase *request,
+                                                 propane::PropaneStatus *reply)
+{
+  Metadata meta = this->GetMetadata(context);
+  return implementation->DeleteDatabase(&meta, request, reply);
+}
+
 grpc::Status DatabaseServiceImpl::Put(ServerContext *context, const propane::PropanePut *request,
                                       propane::PropaneId *reply)
 {

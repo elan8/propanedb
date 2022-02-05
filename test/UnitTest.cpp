@@ -116,6 +116,28 @@ TEST_F(UnitTest, PutGet)
     LOG(INFO) << "Get: any receive: " << reply.data().DebugString() << std::endl;
   }
 
+
+    {
+    propane::PropaneDatabase request;
+    request.set_databasename("test");
+    request.set_newdatabasename("test2");
+
+    propane::PropaneStatus reply;
+    grpc::Status s = db->UpdateDatabase(&meta, &request, &reply);
+    EXPECT_EQ(s.ok(), true);
+
+  }
+
+
+    {
+    propane::PropaneDatabase request;
+    request.set_databasename("test2");
+
+    propane::PropaneStatus reply;
+    grpc::Status s = db->DeleteDatabase(&meta, &request, &reply);
+    EXPECT_EQ(s.ok(), true);
+  }
+
  
 }
 
