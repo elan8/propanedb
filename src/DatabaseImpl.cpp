@@ -223,7 +223,7 @@ grpc::Status DatabaseImpl::DeleteDatabase(
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         "A database with this name does not exist");
   }
-  db = GetDatabase(databaseName);
+  db = GetDatabase(pdb.id());
   if (db != nullptr) {
     db->Close();
   }
@@ -261,8 +261,12 @@ grpc::Status DatabaseImpl::CreateDatabase(
   google::protobuf::FileDescriptorSet *fds =
       new google::protobuf::FileDescriptorSet(request->descriptor_set());
   pdb.set_allocated_descriptor_set(fds);
+
   auto entry = AddDatabaseToList(pdb);
-  string path = Util::getAbsolutePath(databasePath, pdb.id());
+  string path = Util::getAbsolutePath(databasePath, entry->id());
+  if (debug) {
+    LOG(INFO) << "CreateDatabase path=" << path << endl;
+  }
   Options options;
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
@@ -276,26 +280,26 @@ grpc::Status DatabaseImpl::CreateDatabase(
   return grpc::Status::OK;
 }
 
-rocksdb::DB *DatabaseImpl::GetDatabase(string name) {
+rocksdb::DB *DatabaseImpl::GetDatabase(string id) {
   DB *db;
   if (debug) {
-    LOG(INFO) << "GetDatabase: " << name << endl;
+    LOG(INFO) << "GetDatabase: " << id << endl;
   }
-  string path = Util::getAbsolutePath(databasePath, name);
+  string path = Util::getAbsolutePath(databasePath, id);
   if (debug) {
     LOG(INFO) << "Database path = " << path << endl;
   }
-  if (name.length() == 0) {
+  if (id.length() == 0) {
     LOG(ERROR) << "Error: Database name=empty" << endl;
     return nullptr;
   }
 
-  propane::PropaneDatabase selectedDatabase;
-  if (!FindDatabaseInList(name, selectedDatabase)) {
-    LOG(ERROR) << "Error: Database not found" << endl;
-    return nullptr;
-  }
-  db = databases[selectedDatabase.id()];
+  // propane::PropaneDatabase selectedDatabase;
+  // if (!FindDatabaseInList(id, selectedDatabase)) {
+  //   LOG(ERROR) << "Error: Database not found" << endl;
+  //   return nullptr;
+  // }
+  db = databases[id];
   if (db == nullptr) {
     if (debug) {
       LOG(INFO) << "Database pointer = null: opening database" << endl;
@@ -308,7 +312,7 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name) {
       LOG(ERROR) << "Error: Status = " << status.ToString() << endl;
       return nullptr;
     }
-    databases[selectedDatabase.id()] = db;
+    databases[id] = db;
   }
   return db;
 }
@@ -364,7 +368,7 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata,
   string serializedAny;
   any.SerializeToString(&serializedAny);
 
-  rocksdb::DB *db = GetDatabase(databaseName);
+  rocksdb::DB *db = GetDatabase(selectedDatabase.id());
   if (db == nullptr) {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
   }
@@ -389,7 +393,13 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata,
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
 
-  rocksdb::DB *db = GetDatabase(databaseName);
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
+
+  rocksdb::DB *db = GetDatabase(selectedDatabase.id());
   if (db == nullptr) {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
   }
@@ -414,7 +424,14 @@ grpc::Status DatabaseImpl::Delete(Metadata *metadata,
   if (databaseName.length() == 0) {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
-  rocksdb::DB *db = GetDatabase(databaseName);
+
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
+
+  rocksdb::DB *db = GetDatabase(selectedDatabase.id());
   if (db == nullptr) {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
   }
@@ -465,7 +482,7 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata,
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
 
-  rocksdb::DB *db = GetDatabase(databaseName);
+  rocksdb::DB *db = GetDatabase(selectedDatabase.id());
   if (db == nullptr) {
     return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
   }

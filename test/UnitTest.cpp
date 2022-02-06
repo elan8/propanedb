@@ -15,7 +15,7 @@
 using namespace std;
 
 class UnitTest : public ::testing::Test {
-protected:
+ protected:
   UnitTest() {
     // You can do set-up work for each test here.
   }
@@ -101,17 +101,17 @@ TEST_F(UnitTest, PutGet) {
 
     propane::PropaneStatus reply;
     grpc::Status s = db->UpdateDatabase(&meta, &request, &reply);
-   
-     if (!s.ok()) {
+
+    if (!s.ok()) {
       LOG(INFO) << s.error_message() << std::endl;
     }
-     EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(s.ok(), true);
   }
 
-    {
+  {
     propane::PropaneId request;
     request.set_id(id);
-    meta.databaseName="test2";
+    meta.databaseName = "test2";
     propane::PropaneEntity reply;
     grpc::Status s = db->Get(&meta, &request, &reply);
 
@@ -120,106 +120,103 @@ TEST_F(UnitTest, PutGet) {
               << std::endl;
   }
 
-  // {
-  //   propane::PropaneDatabaseRequest request;
-  //   request.set_databasename("test2");
+  {
+    propane::PropaneDatabaseRequest request;
+    request.set_databasename("test2");
 
-  //   propane::PropaneStatus reply;
-  //   grpc::Status s = db->DeleteDatabase(&meta, &request, &reply);
-  //   if (!s.ok()) {
-  //     LOG(INFO) << s.error_message() << std::endl;
-  //   }
+    propane::PropaneStatus reply;
+    grpc::Status s = db->DeleteDatabase(&meta, &request, &reply);
+    if (!s.ok()) {
+      LOG(INFO) << s.error_message() << std::endl;
+    }
 
-  //   EXPECT_EQ(s.ok(), true);
-  // }
+    EXPECT_EQ(s.ok(), true);
+  }
 }
 
-// TEST_F(UnitTest, SearchAll) {
-//   std::string id;
+TEST_F(UnitTest, SearchAll) {
+  std::string id;
 
-//   test::TestEntity item1;
-//   string description1("Test1");
-//   item1.set_description(description1);
+  test::TestEntity item1;
+  string description1("Test1");
+  item1.set_description(description1);
 
-//   test::TestEntity item2;
-//   string description2("Test2");
-//   item2.set_description(description2);
+  test::TestEntity item2;
+  string description2("Test2");
+  item2.set_description(description2);
 
-//   Metadata meta;
-//   meta.databaseName = "test";
+  Metadata meta;
+  meta.databaseName = "test";
 
-//   {
-//     std::ifstream t("descriptor.bin");
-//     std::string descriptor((std::istreambuf_iterator<char>(t)),
-//                            std::istreambuf_iterator<char>());
+  {
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
 
-//     google::protobuf::FileDescriptorSet *fd =
-//         new google::protobuf::FileDescriptorSet;
-//     fd->ParseFromString(descriptor);
-//     propane::PropaneDatabaseRequest request;
-//     request.set_allocated_descriptor_set(fd);
-//     request.set_databasename("test");
-//     propane::PropaneStatus reply;
-//     grpc::Status s = db->CreateDatabase(&meta, &request, &reply);
-//   }
+    google::protobuf::FileDescriptorSet *fd =
+        new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    propane::PropaneDatabaseRequest request;
+    request.set_allocated_descriptor_set(fd);
+    request.set_databasename("test");
+    propane::PropaneStatus reply;
+    grpc::Status s = db->CreateDatabase(&meta, &request, &reply);
+  }
 
-//   {
-//     propane::PropanePut request;
-//     propane::PropaneEntity *entity = new propane::PropaneEntity();
-//     Any *anyMessage = new Any();
-//     anyMessage->PackFrom(item1);
+  {
+    propane::PropanePut request;
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(item1);
 
-//     entity->set_allocated_data(anyMessage);
-//     request.set_allocated_entity(entity);
-//     request.set_databasename("test");
-//     propane::PropaneId reply;
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    propane::PropaneId reply;
 
-//     grpc::Status s = db->Put(&meta, &request, &reply);
-//     LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
-//     EXPECT_EQ(s.ok(), true);
-//     EXPECT_GT(reply.id().length(), 0);
-//     id = reply.id();
-//   }
+    grpc::Status s = db->Put(&meta, &request, &reply);
+    LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
 
-//   {
-//     propane::PropanePut request;
-//     propane::PropaneEntity *entity = new propane::PropaneEntity();
-//     Any *anyMessage = new Any();
-//     anyMessage->PackFrom(item2);
+  {
+    propane::PropanePut request;
+    propane::PropaneEntity *entity = new propane::PropaneEntity();
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(item2);
 
-//     entity->set_allocated_data(anyMessage);
-//     request.set_allocated_entity(entity);
-//     request.set_databasename("test");
-//     propane::PropaneId reply;
+    entity->set_allocated_data(anyMessage);
+    request.set_allocated_entity(entity);
+    propane::PropaneId reply;
 
-//     grpc::Status s = db->Put(&meta, &request, &reply);
-//     LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
-//     EXPECT_EQ(s.ok(), true);
-//     EXPECT_GT(reply.id().length(), 0);
-//     id = reply.id();
-//   }
+    grpc::Status s = db->Put(&meta, &request, &reply);
+    LOG(INFO) << "Put: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_GT(reply.id().length(), 0);
+    id = reply.id();
+  }
 
-//   {
-//     Any *anyMessage = new Any();
-//     anyMessage->PackFrom(item1);
+  {
+    Any *anyMessage = new Any();
+    anyMessage->PackFrom(item1);
 
-//     propane::PropaneSearch request;
-//     request.set_entitytype(anyMessage->type_url());
-//     request.set_query("*");
+    propane::PropaneSearch request;
+    request.set_entitytype(anyMessage->type_url());
+    request.set_query("*");
 
-//     propane::PropaneEntities reply;
-//     // Metadata meta;
-//     grpc::Status s = db->Search(&meta, &request, &reply);
+    propane::PropaneEntities reply;
+    grpc::Status s = db->Search(&meta, &request, &reply);
 
-//     EXPECT_EQ(s.ok(), true);
-//     if (!s.ok()) {
-//       LOG(ERROR) << "Search: error= " << s.error_message() << std::endl;
-//     }
-//     EXPECT_EQ(reply.entities().size(), 2);
-//     LOG(INFO) << "Object 1= " << reply.entities()[0].DebugString() << std::endl;
-//     LOG(INFO) << "Object 2= " << reply.entities()[1].DebugString() << std::endl;
-//   }
-// }
+    EXPECT_EQ(s.ok(), true);
+    if (!s.ok()) {
+      LOG(ERROR) << "Search: error= " << s.error_message() << std::endl;
+    }
+    EXPECT_EQ(reply.entities().size(), 2);
+    LOG(INFO) << "Object 1= " << reply.entities()[0].DebugString() << std::endl;
+    LOG(INFO) << "Object 2= " << reply.entities()[1].DebugString() << std::endl;
+  }
+}
 
 auto main(int argc, char **argv) -> int {
   FLAGS_logtostderr = 1;
