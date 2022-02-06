@@ -369,6 +369,10 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata,
     return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
   }
   ROCKSDB_NAMESPACE::Status s = db->Put(WriteOptions(), id, serializedAny);
+  if (!s.ok()) {
+    LOG(INFO) << "Error:" << s.ToString() << endl;
+    return grpc::Status(grpc::StatusCode::INTERNAL, s.ToString());
+  }
   reply->set_id(id);
   return grpc::Status::OK;
 }
