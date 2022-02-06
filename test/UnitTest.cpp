@@ -27,15 +27,17 @@ class UnitTest : public ::testing::Test {
   void SetUp() override {
     LOG(INFO) << "SetUp" << std::endl;
     std::string dir("/tmp/test1");
+    std::string backupdir("/tmp/test1/backup");
     try {
       if (boost::filesystem::exists(dir)) {
         boost::filesystem::remove_all(dir);
       }
       boost::filesystem::create_directory(dir);
+      boost::filesystem::create_directory(backupdir);
     } catch (boost::filesystem::filesystem_error const &e) {
       LOG(INFO) << "Error: " << e.what() << std::endl;
     }
-    db = new DatabaseImpl(dir, dir, true);
+    db = new DatabaseImpl(dir, backupdir, true);
   }
 
   void TearDown() override {
@@ -216,6 +218,96 @@ TEST_F(UnitTest, SearchAll) {
     LOG(INFO) << "Object 1= " << reply.entities()[0].DebugString() << std::endl;
     LOG(INFO) << "Object 2= " << reply.entities()[1].DebugString() << std::endl;
   }
+}
+
+TEST_F(UnitTest, BackupRestore) {
+  std::string id;
+  test::TestEntity item;
+  string description("Test PropaneDB");
+  item.set_description(description);
+  Metadata meta;
+  meta.databaseName = "test";
+  {
+    std::ifstream t("descriptor.bin");
+    std::string descriptor((std::istreambuf_iterator<char>(t)),
+                           std::istreambuf_iterator<char>());
+    google::protobuf::FileDescriptorSet *fd =
+        new google::protobuf::FileDescriptorSet;
+    fd->ParseFromString(descriptor);
+    propane::PropaneDatabaseRequest request;
+    request.set_allocated_descriptor_set(fd);
+    request.set_databasename("test");
+    propane::PropaneStatus reply;
+    grpc::Status s = db->CreateDatabase(&meta, &request, &reply);
+  }
+
+  {
+    grpc::Status s = db->Backup(&meta, "test", "/tmp/backup.zip");
+    LOG(INFO) << "Backup: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+  }
+
+  {
+    grpc::Status s = db->Restore(&meta, "test", "/tmp/backup.zip");
+    LOG(INFO) << "Restore: Status=" << s.error_message() << std::endl;
+    EXPECT_EQ(s.ok(), true);
+  }
+
+  //   {
+  //   grpc::Status s = db->Backup(&meta, "test", "/tmp/backup");
+  //   LOG(INFO) << "Backup: Status=" << s.error_message() << std::endl;
+  //   EXPECT_EQ(s.ok(), true);
+  // }
+
+  // {
+  //   propane::PropaneId request;
+  //   request.set_id(id);
+  //   propane::PropaneEntity reply;
+  //   grpc::Status s = db->Get(&meta, &request, &reply);
+
+  //   EXPECT_EQ(s.ok(), true);
+  //   LOG(INFO) << "Get: any receive: " << reply.data().DebugString()
+  //             << std::endl;
+  // }
+
+  // {
+  //   propane::PropaneDatabaseRequest request;
+  //   request.set_databasename("test");
+  //   request.set_newdatabasename("test2");
+
+  //   propane::PropaneStatus reply;
+  //   grpc::Status s = db->UpdateDatabase(&meta, &request, &reply);
+
+  //   if (!s.ok()) {
+  //     LOG(INFO) << s.error_message() << std::endl;
+  //   }
+  //   EXPECT_EQ(s.ok(), true);
+  // }
+
+  // {
+  //   propane::PropaneId request;
+  //   request.set_id(id);
+  //   meta.databaseName = "test2";
+  //   propane::PropaneEntity reply;
+  //   grpc::Status s = db->Get(&meta, &request, &reply);
+
+  //   EXPECT_EQ(s.ok(), true);
+  //   LOG(INFO) << "Get: any receive: " << reply.data().DebugString()
+  //             << std::endl;
+  // }
+
+  // {
+  //   propane::PropaneDatabaseRequest request;
+  //   request.set_databasename("test2");
+
+  //   propane::PropaneStatus reply;
+  //   grpc::Status s = db->DeleteDatabase(&meta, &request, &reply);
+  //   if (!s.ok()) {
+  //     LOG(INFO) << s.error_message() << std::endl;
+  //   }
+
+  //   EXPECT_EQ(s.ok(), true);
+  // }
 }
 
 auto main(int argc, char **argv) -> int {

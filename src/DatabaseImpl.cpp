@@ -553,6 +553,15 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata,
                                   const string &zipFilePath) {
   BackupEngine *backup_engine;
 
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
+
+  if (debug) {
+    LOG(INFO) << "backupPath=" << backupPath << endl;
+  }
   auto options = BackupableDBOptions(backupPath);
   options.share_table_files = false;
 
@@ -561,10 +570,14 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata,
   assert(s.ok());
   backup_engine->PurgeOldBackups(0);
 
-  rocksdb::DB *db = GetDatabase(databaseName);
+  rocksdb::DB *db = GetDatabase(selectedDatabase.id());
+  if (db == nullptr) {
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Error: Database null ptr");
+  }
   s = backup_engine->CreateNewBackup(db, true);
   if (!s.ok()) {
     LOG(ERROR) << "CreateNewBackup error= " << s.ToString() << endl;
+    return grpc::Status(grpc::StatusCode::INTERNAL, "CreateNewBackup error");
   }
 
   std::vector<BackupInfo> backup_info;
@@ -605,7 +618,18 @@ void DatabaseImpl::onDecompressError(
 grpc::Status DatabaseImpl::Restore(Metadata *metadata,
                                    const string &databaseName,
                                    const string &zipFilePath) {
-  CloseDatabases();
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
+
+  auto db = GetDatabase(selectedDatabase.id());
+  if (db != nullptr) {
+    db->Close();
+  }
+
+  // CloseDatabases();
   std::ifstream inp(zipFilePath, std::ios::binary);
   poco_assert(inp);
   Poco::Zip::Decompress dec(inp, Poco::Path(backupPath));
@@ -636,10 +660,12 @@ grpc::Status DatabaseImpl::Restore(Metadata *metadata,
   if (s.IsNotFound()) {
     LOG(ERROR) << "No backup found, so nothing to restore";
   } else {
-    s = backup_engine->RestoreDBFromLatestBackup(databaseName, databaseName);
+    s = backup_engine->RestoreDBFromLatestBackup(selectedDatabase.id(),
+                                                 selectedDatabase.id());
     if (!s.ok()) {
       LOG(ERROR) << "Error: " << s.ToString();
-      return grpc::Status::CANCELLED;
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "Error: RestoreDBFromLatestBackup ");
     }
   }
   delete backup_engine;
