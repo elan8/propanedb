@@ -40,20 +40,19 @@ private:
     string databasePath;
     string backupPath;
     string databaseListFilename;
-
     google::protobuf::DynamicMessageFactory dmf;
     QueryParser *queryParser;
     map<string, rocksdb::DB *> databases;
-
     propane::PropaneDatabases databaseList;
     bool debug;
+    std::mutex databaseModifyMutex;
     
-
     static bool IsCorrectEntityType(google::protobuf::Any *any, std::string type);
     rocksdb::DB *GetDatabase(string name);
     void CloseDatabases();
     void onDecompressError(const void* pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>& info);
 
+   
     bool ReadDatabaseList();
     bool WriteDatabaseList();
     //void CreateDatabaseList();

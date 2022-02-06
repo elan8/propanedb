@@ -1,75 +1,81 @@
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
-#include <memory>
-#include <string>
-#include <sstream>
-#include <vector>
 #include <iterator>
-#include <boost/uuid/uuid.hpp>           
-#include <boost/uuid/uuid_generators.hpp> 
-#include <boost/uuid/uuid_io.hpp>     
-
-#include <string>
-#include <cstdint>
 #include <memory>
-#include <functional>
-#include <ostream>
-#include <stdexcept>
-#include <algorithm>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
 
+#include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-namespace
-{
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <ostream>
+#include <stdexcept>
+#include <string>
 
-    template <typename T>
-    class MMapPtr : public std::unique_ptr<T, std::function<void(T *)>>
-    {
-    public:
-        MMapPtr(T *addr, size_t len, int fd = -1) : std::unique_ptr<T, std::function<void(T *)>>(addr, [len, fd](T *addr)
-                                                                                                 { unmap_and_close(addr, len, fd); })
-        {
-        }
+namespace {
 
-        MMapPtr() : MMapPtr(nullptr, 0, -1) {}
+template <typename T>
+class MMapPtr : public std::unique_ptr<T, std::function<void(T *)>> {
+ public:
+  MMapPtr(T *addr, size_t len, int fd = -1)
+      : std::unique_ptr<T, std::function<void(T *)>>(
+            addr, [len, fd](T *addr) { unmap_and_close(addr, len, fd); }) {}
 
-        using std::unique_ptr<T, std::function<void(T *)>>::unique_ptr;
-        using std::unique_ptr<T, std::function<void(T *)>>::operator=;
+  MMapPtr() : MMapPtr(nullptr, 0, -1) {}
 
-    private:
-        static void unmap_and_close(const void *addr, size_t len, int fd)
-        {
-            if ((MAP_FAILED != addr) && (nullptr != addr) && (len > 0))
-            {
-                munmap(const_cast<void *>(addr), len);
-            }
+  using std::unique_ptr<T, std::function<void(T *)>>::unique_ptr;
+  using std::unique_ptr<T, std::function<void(T *)>>::operator=;
 
-            if (fd >= 0)
-            {
-                close(fd);
-            }
+ private:
+  static void unmap_and_close(const void *addr, size_t len, int fd) {
+    if ((MAP_FAILED != addr) && (nullptr != addr) && (len > 0)) {
+      munmap(const_cast<void *>(addr), len);
+    }
 
-            return;
-        }
-    };
-}; // Anonymous namespace
+    if (fd >= 0) {
+      close(fd);
+    }
 
-class Util
-{
-public:
-  static std::string getTypeName(const std::string &s)
-  {
+    return;
+  }
+};
+};  // Anonymous namespace
+
+class Util {
+ public:
+  static std::string getTypeName(const std::string &s) {
     std::string token = s.substr(s.find("/") + 1);
     return token;
   }
 
-  static std::string generateUUID()
-  {
+  static std::string generateUUID() {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
     return to_string(uuid);
+  }
+
+  static std::string getAbsolutePath(std::string path, std::string fileName) {
+    std::filesystem::path p1;
+    p1 += path;
+    p1 /= fileName;
+    // string path = p1.generic_string();
+    return p1.generic_string();
+  }
+
+  static bool pathExists(std::string path) {
+    return std::filesystem::exists(path);
   }
 };
