@@ -2,19 +2,19 @@ syntax = "proto3";
 option go_package = "propane/";
 package test;
 
-message TestEntity{
-    string id = 1;
-    string description = 2;
-  }
+message TestEntity {
+  string id = 1;
+  string description = 2;
+}
 
-  message Book{
-    string id = 1;
-    string title = 2;
-    Author author = 3;
-  }
+message Book {
+  string id = 1;
+  string title = 2;
+  Author author = 3;
+}
 
-  message Author{
-    string id = 1;
-    string firstName = 2;
-    string lastName = 3;
-  }
+message Author {
+  string id = 1;
+  string firstName = 2;
+  string lastName = 3;
+}

@@ -23,8 +23,7 @@ std::string databasePath = "/var/rocksdb";
 std::string backupPath = "/tmp/rocksdb_backup";
 bool debug = false;
 
-void RunServer()
-{
+void RunServer() {
   std::string server_address("0.0.0.0:50051");
   DatabaseServiceImpl service(databasePath, backupPath, debug);
   grpc::EnableDefaultHealthCheckService(true);
@@ -33,32 +32,27 @@ void RunServer()
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  LOG(INFO) << "PropaneDB started: Listening on " << server_address << std::endl;
+  LOG(INFO) << "PropaneDB started: Listening on " << server_address
+            << std::endl;
   server->Wait();
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_logtostderr = 1;
 
   char *flag = std::getenv("DEBUG");
-  if (flag)
-  {
-    if (std::string("true").compare(flag) == 0)
-    {
+  if (flag) {
+    if (std::string("true").compare(flag) == 0) {
       LOG(INFO) << "DEBUG MODE ENABLED" << '\n';
       debug = true;
-    }
-    else
-    {
+    } else {
       debug = false;
     }
   }
 
   char *path = std::getenv("DATABASEPATH");
-  if (path)
-  {
+  if (path) {
     LOG(INFO) << "DATABASEPATH=" << path << '\n';
     databasePath = path;
   }

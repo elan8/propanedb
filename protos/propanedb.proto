@@ -8,67 +8,56 @@ option go_package = "propane/";
 package propane;
 
 service Database {
-  rpc CreateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
-  rpc Put (PropanePut) returns (PropaneId) {}
-  rpc Get (PropaneId) returns (PropaneEntity) {}
-  rpc Delete (PropaneId) returns (PropaneStatus) {}
-  rpc Search (PropaneSearch) returns (PropaneEntities) {}
+  rpc CreateDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {}
+  rpc UpdateDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {}
+  rpc DeleteDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {}
+  rpc Put(PropanePut) returns (PropaneId) {}
+  rpc Get(PropaneId) returns (PropaneEntity) {}
+  rpc Delete(PropaneId) returns (PropaneStatus) {}
+  rpc Search(PropaneSearch) returns (PropaneEntities) {}
 
-  rpc Backup (PropaneBackupRequest) returns (stream PropaneBackupReply) {}
-  rpc Restore (stream PropaneRestoreRequest) returns (PropaneRestoreReply) {}
+  rpc Backup(PropaneBackupRequest) returns (stream PropaneBackupReply) {}
+  rpc Restore(stream PropaneRestoreRequest) returns (PropaneRestoreReply) {}
 }
 
-message PropaneFileChunk{
-  bytes data =1;
+message PropaneDatabase {
+  string id = 1;
+  string name = 2;
+  google.protobuf.FileDescriptorSet descriptor_set = 3;
+}
+
+message PropaneDatabases { repeated PropaneDatabase databases = 1; }
+
+message PropaneFileChunk {
+  bytes data = 1;
   string databaseName = 2;
 }
 
-message PropaneBackupRequest{
-  string databaseName = 1;
-}
+message PropaneBackupRequest { string databaseName = 1; }
 
-message PropaneBackupReply{
-    PropaneFileChunk chunk = 1;
-}
+message PropaneBackupReply { PropaneFileChunk chunk = 1; }
 
-message PropaneRestoreRequest{
-    PropaneFileChunk chunk = 1;
-}
+message PropaneRestoreRequest { PropaneFileChunk chunk = 1; }
 
-message PropaneRestoreReply{
+message PropaneRestoreReply {}
 
-}
-
-message PropaneDatabase{
+message PropaneDatabaseRequest {
   string databaseName = 1;
   google.protobuf.FileDescriptorSet descriptor_set = 2;
+  string newDatabaseName = 3;
 }
 
-message PropaneEntities {
-  repeated PropaneEntity entities = 1;
-}
+message PropaneEntities { repeated PropaneEntity entities = 1; }
 
-message PropaneEntity {
-  google.protobuf.Any data = 1;
-}
+message PropaneEntity { google.protobuf.Any data = 1; }
 
-message PropaneStatus {
-  string statusMessage = 1;
-}
+message PropaneStatus { string statusMessage = 1; }
 
-message PropanePut{
-  string databaseName = 1;
-  PropaneEntity entity = 2;
-}
+message PropanePut { PropaneEntity entity = 1; }
 
-message PropaneId{
-  string databaseName = 1;
-  string id = 2;
-}
+message PropaneId { string id = 1; }
 
 message PropaneSearch {
-  string databaseName = 1;
-  string entityType = 2;
-  string query = 3;
-  
+  string entityType = 1;
+  string query = 2;
 }

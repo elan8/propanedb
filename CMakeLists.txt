@@ -98,6 +98,7 @@ add_library(propane_lib
   )
 add_dependencies(propane_lib protoGenerate)
 target_link_libraries(propane_lib
+  Boost::filesystem
   rocksdb 
   pthread 
   gRPC::grpc++_reflection
@@ -114,8 +115,6 @@ add_executable(server src/Server.cpp  )
 add_dependencies(server propane_lib )
 target_link_libraries(server 
 propane_lib
-gRPC::grpc++_reflection
-gRPC::grpc++
 ${Protobuf_LIBRARIES})
 
 option(USE_GCOV "Use GCOV" OFF) #OFF by default
