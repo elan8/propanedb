@@ -31,14 +31,14 @@ using namespace ROCKSDB_NAMESPACE;
 using namespace std;
 
 class DatabaseServiceImpl final : public Database::Service {
-private:
+ private:
   string databasePath;
   string backupPath;
   DatabaseImpl *implementation;
   Metadata GetMetadata(ServerContext *context);
   bool debug;
 
-public:
+ public:
   DatabaseServiceImpl(const string &databasePath, const string &backupPath,
                       bool debug);
   ~DatabaseServiceImpl();
@@ -60,11 +60,11 @@ public:
   grpc::Status DeleteDatabase(ServerContext *context,
                               const propane::PropaneDatabaseRequest *request,
                               propane::PropaneStatus *reply) override;
-  grpc::Status
-  Backup(ServerContext *context, const ::propane::PropaneBackupRequest *request,
-         ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer);
-  grpc::Status
-  Restore(ServerContext *context,
-          ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
-          ::propane::PropaneRestoreReply *response);
+  grpc::Status Backup(
+      ServerContext *context, const ::propane::PropaneBackupRequest *request,
+      ::grpc::ServerWriter<::propane::PropaneBackupReply> *writer);
+  grpc::Status Restore(
+      ServerContext *context,
+      ::grpc::ServerReader<::propane::PropaneRestoreRequest> *reader,
+      ::propane::PropaneRestoreReply *response);
 };

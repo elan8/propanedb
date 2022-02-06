@@ -15,10 +15,12 @@ namespace fs = std::filesystem;
 
 DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath,
                            bool debug)
-    : databasePath(databasePath), backupPath(backupPath),
+    : databasePath(databasePath),
+      backupPath(backupPath),
       databaseListFilename(
           Util::getAbsolutePath(databasePath, "databases.dat")),
-      databases(), databaseList() {
+      databases(),
+      databaseList() {
   queryParser = new QueryParser(debug);
   this->debug = debug;
 
@@ -55,8 +57,8 @@ bool DatabaseImpl::WriteDatabaseList() {
   return true;
 }
 
-propane::PropaneDatabase *
-DatabaseImpl::AddDatabaseToList(propane::PropaneDatabase entry) {
+propane::PropaneDatabase *DatabaseImpl::AddDatabaseToList(
+    propane::PropaneDatabase entry) {
   string id = Util::generateUUID();
   auto db = databaseList.mutable_databases()->Add();
   db->set_id(id);
@@ -109,8 +111,8 @@ bool DatabaseImpl::DeleteDatabaseFromList(string uuid) {
   return false;
 }
 
-google::protobuf::DescriptorPool
-DatabaseImpl::GetDescriptorPool(propane::PropaneDatabase database) {
+google::protobuf::DescriptorPool DatabaseImpl::GetDescriptorPool(
+    propane::PropaneDatabase database) {
   auto descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
   auto fds = database.descriptor_set();
   if (fds.file_size() > 0) {
@@ -140,10 +142,9 @@ void DatabaseImpl::CloseDatabases() {
   }
 }
 
-grpc::Status
-DatabaseImpl::UpdateDatabase(Metadata *metadata,
-                             const propane::PropaneDatabaseRequest *request,
-                             propane::PropaneStatus *reply) {
+grpc::Status DatabaseImpl::UpdateDatabase(
+    Metadata *metadata, const propane::PropaneDatabaseRequest *request,
+    propane::PropaneStatus *reply) {
   databaseModifyMutex.lock();
   bool updateDatabase = false;
   DB *db;
@@ -198,10 +199,9 @@ DatabaseImpl::UpdateDatabase(Metadata *metadata,
   return grpc::Status::OK;
 }
 
-grpc::Status
-DatabaseImpl::DeleteDatabase(Metadata *metadata,
-                             const propane::PropaneDatabaseRequest *request,
-                             propane::PropaneStatus *reply) {
+grpc::Status DatabaseImpl::DeleteDatabase(
+    Metadata *metadata, const propane::PropaneDatabaseRequest *request,
+    propane::PropaneStatus *reply) {
   databaseModifyMutex.lock();
   DB *db;
   string databaseName = request->databasename();
@@ -245,11 +245,9 @@ DatabaseImpl::DeleteDatabase(Metadata *metadata,
   return grpc::Status::OK;
 }
 
-grpc::Status
-DatabaseImpl::CreateDatabase(Metadata *metadata,
-                             const propane::PropaneDatabaseRequest *request,
-                             propane::PropaneStatus *reply) {
-
+grpc::Status DatabaseImpl::CreateDatabase(
+    Metadata *metadata, const propane::PropaneDatabaseRequest *request,
+    propane::PropaneStatus *reply) {
   databaseModifyMutex.lock();
   DB *db;
 
@@ -535,7 +533,6 @@ bool DatabaseImpl::IsCorrectEntityType(google::protobuf::Any *any,
 grpc::Status DatabaseImpl::Backup(Metadata *metadata,
                                   const string &databaseName,
                                   const string &zipFilePath) {
-
   BackupEngine *backup_engine;
 
   auto options = BackupableDBOptions(backupPath);
@@ -573,7 +570,7 @@ grpc::Status DatabaseImpl::Backup(Metadata *metadata,
   Poco::Zip::Compress c(out, false);
   Poco::Path backupDir(backupPath);
   c.addRecursive(backupDir);
-  c.close(); // MUST be done to finalize the Zip file
+  c.close();  // MUST be done to finalize the Zip file
 
   backup_engine->PurgeOldBackups(0);
   delete backup_engine;
