@@ -8,9 +8,9 @@ option go_package = "propane/";
 package propane;
 
 service Database {
-  rpc CreateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
-  rpc UpdateDatabase(PropaneDatabase) returns (PropaneStatus) {} 
-  rpc DeleteDatabase(PropaneDatabase) returns (PropaneStatus) {} 
+  rpc CreateDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {} 
+  rpc UpdateDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {} 
+  rpc DeleteDatabase(PropaneDatabaseRequest) returns (PropaneStatus) {} 
   rpc Put (PropanePut) returns (PropaneId) {}
   rpc Get (PropaneId) returns (PropaneEntity) {}
   rpc Delete (PropaneId) returns (PropaneStatus) {}
@@ -18,6 +18,17 @@ service Database {
 
   rpc Backup (PropaneBackupRequest) returns (stream PropaneBackupReply) {}
   rpc Restore (stream PropaneRestoreRequest) returns (PropaneRestoreReply) {}
+}
+
+//internal
+message PropaneDatabase{
+  string id = 1;
+  string name = 2;
+  google.protobuf.FileDescriptorSet descriptor_set = 3;
+}
+
+message PropaneDatabases {
+  repeated PropaneDatabase databases = 1;
 }
 
 message PropaneFileChunk{
@@ -41,7 +52,7 @@ message PropaneRestoreReply{
 
 }
 
-message PropaneDatabase{
+message PropaneDatabaseRequest{
   string databaseName = 1;
   google.protobuf.FileDescriptorSet descriptor_set = 2;
   string newDatabaseName = 3;

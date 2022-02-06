@@ -52,13 +52,13 @@ public:
                       const propane::PropaneSearch *request,
                       propane::PropaneEntities *reply) override;
   grpc::Status CreateDatabase(ServerContext *context,
-                              const propane::PropaneDatabase *request,
+                              const propane::PropaneDatabaseRequest *request,
                               propane::PropaneStatus *reply) override;
   grpc::Status UpdateDatabase(ServerContext *context,
-                              const propane::PropaneDatabase *request,
+                              const propane::PropaneDatabaseRequest *request,
                               propane::PropaneStatus *reply) override;
   grpc::Status DeleteDatabase(ServerContext *context,
-                              const propane::PropaneDatabase *request,
+                              const propane::PropaneDatabaseRequest *request,
                               propane::PropaneStatus *reply) override;
   grpc::Status
   Backup(ServerContext *context, const ::propane::PropaneBackupRequest *request,

@@ -37,7 +37,7 @@ grpc::Status Client::CreateDatabase()
                            std::istreambuf_iterator<char>());
     google::protobuf::FileDescriptorSet *fd = new google::protobuf::FileDescriptorSet;
     fd->ParseFromString(descriptor);
-    propane::PropaneDatabase request;
+    propane::PropaneDatabaseRequest request;
     request.set_databasename(databaseName);
     request.set_allocated_descriptor_set(fd);
 

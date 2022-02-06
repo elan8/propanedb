@@ -15,21 +15,134 @@ namespace fs = std::filesystem;
 
 DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath,
                            bool debug)
-    : databasePath(databasePath), backupPath(backupPath), databases() {
-  // descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
-  // pool = new google::protobuf::DescriptorPool(descriptorDB);
+    : databasePath(databasePath), backupPath(backupPath),
+      databaseListFilename(databasePath + "/databases.dat"), databases(),
+      databaseList() {
   queryParser = new QueryParser(debug);
   this->debug = debug;
+
+  ReadDatabaseList();
 }
 
 DatabaseImpl::~DatabaseImpl() {
+
+  WriteDatabaseList();
+
   for (auto it = databases.begin(); it != databases.end(); ++it) {
     DB *db = it->second;
     db->Close();
     delete db;
   }
+}
 
-  delete descriptorDB;
+bool DatabaseImpl::ReadDatabaseList() {
+
+  try {
+    if (boost::filesystem::exists(databaseListFilename)) {
+      ifstream inputStream;
+      inputStream.open(databaseListFilename);
+      databaseList.ParseFromIstream(&inputStream);
+      // databaseList.SerializeToOstream(&outputStream);
+      inputStream.close();
+    }
+
+  } catch (boost::filesystem::filesystem_error const &e) {
+    LOG(INFO) << "Error: " << e.what() << std::endl;
+  }
+  return true;
+}
+bool DatabaseImpl::WriteDatabaseList() {
+
+  ofstream outputStream;
+  outputStream.open(databaseListFilename);
+  databaseList.SerializeToOstream(&outputStream);
+  outputStream.close();
+
+  return true;
+}
+
+propane::PropaneDatabase *
+DatabaseImpl::AddDatabaseToList(propane::PropaneDatabase entry) {
+  string id = Util::generateUUID();
+  auto db = databaseList.mutable_databases()->Add();
+  db->set_id(id);
+  db->set_name(entry.name());
+  auto fds = new google::protobuf::FileDescriptorSet();
+  fds->CopyFrom(entry.descriptor_set());
+  db->set_allocated_descriptor_set(fds);
+  WriteDatabaseList();
+  return db;
+}
+
+bool DatabaseImpl::FindDatabaseInList(string databaseName,
+                                      propane::PropaneDatabase &output) {
+  for (int i = 0; i < databaseList.databases_size(); i++) {
+    auto db = databaseList.databases().at(i);
+    if (db.name().compare(databaseName) == 0) {
+      output = db;
+      return true;
+    }
+  }
+  return false;
+}
+bool DatabaseImpl::UpdateDatabaseInList(propane::PropaneDatabase entry) {
+  for (int i = 0; i < databaseList.databases_size(); i++) {
+    auto db = databaseList.databases().at(i);
+    if (db.id().compare(entry.id()) == 0) {
+      auto mdb = databaseList.mutable_databases()->Mutable(i);
+      if (db.name().length() > 0) {
+        mdb->set_name(entry.name());
+      }
+      if (db.has_descriptor_set()) {
+        google::protobuf::FileDescriptorSet *fds =
+            new google::protobuf::FileDescriptorSet(entry.descriptor_set());
+        mdb->set_allocated_descriptor_set(fds);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+bool DatabaseImpl::DeleteDatabaseFromList(string uuid) {
+  for (int i = 0; i < databaseList.databases_size(); i++) {
+    auto db = databaseList.databases().at(i);
+    if (db.id().compare(uuid) == 0) {
+      databaseList.mutable_databases()->DeleteSubrange(i, 1);
+      // auto mdb = databaseList.mutable_databases()->Mutable(i);
+      // if (db.name().length() > 0) {
+      //   mdb->set_name(entry.name());
+      // }
+      // if (db.has_descriptor_set()) {
+      //   google::protobuf::FileDescriptorSet *fds =
+      //       new google::protobuf::FileDescriptorSet(entry.descriptor_set());
+      //   mdb->set_allocated_descriptor_set(fds);
+      // }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+google::protobuf::DescriptorPool
+DatabaseImpl::GetDescriptorPool(propane::PropaneDatabase database) {
+
+  // auto dp = google::protobuf::DescriptorPool();
+  auto descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+  auto fds = database.descriptor_set();
+  if (fds.file_size() > 0) {
+    auto file = fds.file();
+    for (auto it = file.begin(); it != file.end(); ++it) {
+      descriptorDB->Add((*it));
+    }
+    // auto dp = google::protobuf::DescriptorPool(descriptorDB);
+    return google::protobuf::DescriptorPool(descriptorDB);
+    // this->descriptorPools[databaseName] =
+    //     new google::protobuf::DescriptorPool(descriptorDB);
+  }
+
+  return google::protobuf::DescriptorPool();
 }
 
 void DatabaseImpl::setDebugMode(bool enabled) { debug = enabled; }
@@ -51,10 +164,10 @@ void DatabaseImpl::CloseDatabases() {
 
 grpc::Status
 DatabaseImpl::UpdateDatabase(Metadata *metadata,
-                             const propane::PropaneDatabase *request,
+                             const propane::PropaneDatabaseRequest *request,
                              propane::PropaneStatus *reply) {
 
-  // bool renameDatabase = false;
+  bool updateDatabase = false;
   DB *db;
   google::protobuf::DescriptorPool *pool;
   string databaseName = request->databasename();
@@ -68,70 +181,94 @@ DatabaseImpl::UpdateDatabase(Metadata *metadata,
     LOG(INFO) << "UpdateDatabase newDatabaseName=" << newDatabaseName << endl;
   }
 
+  auto pdb = propane::PropaneDatabase();
+  if (!FindDatabaseInList(databaseName, pdb)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Database not found");
+  }
+
   fs::path p1;
   p1 += databasePath;
-  p1 /= databaseName;
+  p1 /= pdb.id();
   string path = p1.generic_string();
+  if (debug) {
+    LOG(INFO) << "UpdateDatabase databaseName=" << databaseName << endl;
+    LOG(INFO) << "UpdateDatabase path=" << path << endl;
+  }
 
-  db = GetDatabase(databaseName);
-  pool = this->descriptorPools[databaseName];
+  // fs::path p1;
+  // p1 += databasePath;
+  // p1 /= databaseName;
+  // string path = p1.generic_string();
 
-  google::protobuf::FileDescriptorSet fds = request->descriptor_set();
-  descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
-  if (fds.file_size() > 0) {
-    auto file = fds.file();
-    for (auto it = file.begin(); it != file.end(); ++it) {
-      descriptorDB->Add((*it));
+  // db = GetDatabase(databaseName);
+  // pool = this->descriptorPools[databaseName];
+
+  // google::protobuf::FileDescriptorSet fds = request->descriptor_set();
+  // // string output;
+  // // fds.SerializeToString(&output);
+  // // fds.ParseFromString(output);
+  // descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+  if (request->descriptor_set().file_size() > 0) {
+    if (debug) {
+      LOG(INFO) << "Update file descriptor set" << endl;
     }
-    this->descriptorPools[databaseName] =
-        new google::protobuf::DescriptorPool(descriptorDB);
+    google::protobuf::FileDescriptorSet *fds =
+        new google::protobuf::FileDescriptorSet(request->descriptor_set());
+    pdb.set_allocated_descriptor_set(fds);
+    updateDatabase = true;
   }
 
   if (newDatabaseName.length() > 0) {
     if (debug) {
       LOG(INFO) << "Rename database to " << newDatabaseName << endl;
     }
-
-    if (db != nullptr) {
-      db->Close();
-    }
-
-    fs::path p2;
-    p2 += databasePath;
-    p2 /= newDatabaseName;
-    string path2 = p2.generic_string();
-    try {
-      if (boost::filesystem::exists(path)) {
-             LOG(INFO) << "Path=" << path << " and path2= "<< path2 << std::endl;
-        boost::filesystem::rename(path, path2);
-      } else {
-        LOG(INFO) << "Error: path doesn't exist" << path << std::endl;
-        return grpc::Status(grpc::StatusCode::INTERNAL, "path doesn't exist");
-      }
-      // boost::filesystem::create_directory(path);
-    } catch (boost::filesystem::filesystem_error const &e) {
-      LOG(INFO) << "Error: " << e.what() << std::endl;
-      return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
-    }
+    pdb.set_name(newDatabaseName);
+    updateDatabase = true;
   }
 
-  // db = databases[databaseName];
-  // bool databaseExists = fs::exists(path);
-  // if (db != nullptr || databaseExists) {
-  //   LOG(ERROR) << "Database exists:" << path << endl;
-  //   return grpc::Status(grpc::StatusCode::ALREADY_EXISTS,
-  //                       "A database with this name already exists");
-  // }
+  if (updateDatabase) {
+    if (debug) {
+      // LOG(INFO) << "Update  database in list " << pdb.DebugString() << endl;
+    }
+    if (!UpdateDatabaseInList(pdb)) {
 
-  // databases[databaseName] = db;
-  // return grpc::Status::OK;
+      return grpc::Status(grpc::StatusCode::INTERNAL,
+                          "Update of database failed");
+    }
+
+    WriteDatabaseList();
+  }
+
+  //   if (db != nullptr) {
+  //     db->Close();
+  //   }
+
+  //   fs::path p2;
+  //   p2 += databasePath;
+  //   p2 /= newDatabaseName;
+  //   string path2 = p2.generic_string();
+  //   try {
+  //     if (boost::filesystem::exists(path)) {
+  //       LOG(INFO) << "Path=" << path << " and path2= " << path2 << std::endl;
+  //       boost::filesystem::rename(path, path2);
+  //     } else {
+  //       LOG(INFO) << "Error: path doesn't exist" << path << std::endl;
+  //       return grpc::Status(grpc::StatusCode::INTERNAL, "path doesn't
+  //       exist");
+  //     }
+  //     // boost::filesystem::create_directory(path);
+  //   } catch (boost::filesystem::filesystem_error const &e) {
+  //     LOG(INFO) << "Error: " << e.what() << std::endl;
+  //     return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+  //   }
+  // }
 
   return grpc::Status::OK;
 }
 
 grpc::Status
 DatabaseImpl::DeleteDatabase(Metadata *metadata,
-                             const propane::PropaneDatabase *request,
+                             const propane::PropaneDatabaseRequest *request,
                              propane::PropaneStatus *reply) {
 
   DB *db;
@@ -140,9 +277,13 @@ DatabaseImpl::DeleteDatabase(Metadata *metadata,
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
 
+  auto pdb = propane::PropaneDatabase();
+  if (!FindDatabaseInList(databaseName, pdb)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Database not found");
+  }
   fs::path p1;
   p1 += databasePath;
-  p1 /= databaseName;
+  p1 /= pdb.id();
   string path = p1.generic_string();
   if (debug) {
     LOG(INFO) << "DeleteDatabase databaseName=" << databaseName << endl;
@@ -164,18 +305,20 @@ DatabaseImpl::DeleteDatabase(Metadata *metadata,
     if (boost::filesystem::exists(path)) {
       boost::filesystem::remove_all(path);
     }
-    boost::filesystem::create_directory(path);
+    // boost::filesystem::create_directory(path);
   } catch (boost::filesystem::filesystem_error const &e) {
     LOG(INFO) << "Error: " << e.what() << std::endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
   }
+  DeleteDatabaseFromList(pdb.id());
+  WriteDatabaseList();
 
   return grpc::Status::OK;
 }
 
 grpc::Status
 DatabaseImpl::CreateDatabase(Metadata *metadata,
-                             const propane::PropaneDatabase *request,
+                             const propane::PropaneDatabaseRequest *request,
                              propane::PropaneStatus *reply) {
 
   DB *db;
@@ -188,34 +331,42 @@ DatabaseImpl::CreateDatabase(Metadata *metadata,
     LOG(INFO) << "CreateDatabase databaseName=" << databaseName << endl;
   }
 
+  auto pdb = propane::PropaneDatabase();
+  pdb.set_name(databaseName);
+  google::protobuf::FileDescriptorSet *fds =
+      new google::protobuf::FileDescriptorSet(request->descriptor_set());
+  pdb.set_allocated_descriptor_set(fds);
+
+  auto entry = AddDatabaseToList(pdb);
+
   fs::path p1;
   p1 += databasePath;
-  p1 /= databaseName;
+  p1 /= entry->id();
   string path = p1.generic_string();
 
-  google::protobuf::FileDescriptorSet fds = request->descriptor_set();
-  descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
-  if (fds.file_size() == 0) {
-    LOG(ERROR) << "FileDescriptorSet is empty" << endl;
-    return grpc::Status(grpc::StatusCode::INTERNAL,
-                        "FileDescriptorSet is empty");
-  }
+  // google::protobuf::FileDescriptorSet fds = request->descriptor_set();
+  // descriptorDB = new google::protobuf::SimpleDescriptorDatabase();
+  // if (fds.file_size() == 0) {
+  //   LOG(ERROR) << "FileDescriptorSet is empty" << endl;
+  //   return grpc::Status(grpc::StatusCode::INTERNAL,
+  //                       "FileDescriptorSet is empty");
+  // }
 
-  auto file = fds.file();
-  for (auto it = file.begin(); it != file.end(); ++it) {
-    descriptorDB->Add((*it));
-  }
-  // pool = new google::protobuf::DescriptorPool(descriptorDB);
-  this->descriptorPools[databaseName] =
-      new google::protobuf::DescriptorPool(descriptorDB);
+  // auto file = fds.file();
+  // for (auto it = file.begin(); it != file.end(); ++it) {
+  //   descriptorDB->Add((*it));
+  // }
+  // // pool = new google::protobuf::DescriptorPool(descriptorDB);
+  // this->descriptorPools[databaseName] =
+  //     new google::protobuf::DescriptorPool(descriptorDB);
 
-  db = databases[databaseName];
-  bool databaseExists = fs::exists(path);
-  if (db != nullptr || databaseExists) {
-    LOG(ERROR) << "Database exists:" << path << endl;
-    return grpc::Status(grpc::StatusCode::ALREADY_EXISTS,
-                        "A database with this name already exists");
-  }
+  // db = databases[databaseName];
+  // bool databaseExists = fs::exists(path);
+  // if (db != nullptr || databaseExists) {
+  //   LOG(ERROR) << "Database exists:" << path << endl;
+  //   return grpc::Status(grpc::StatusCode::ALREADY_EXISTS,
+  //                       "A database with this name already exists");
+  // }
 
   Options options;
   options.IncreaseParallelism();
@@ -227,11 +378,12 @@ DatabaseImpl::CreateDatabase(Metadata *metadata,
   }
   assert(s.ok());
 
-  databases[databaseName] = db;
+  databases[entry->id()] = db;
   return grpc::Status::OK;
 }
 
 rocksdb::DB *DatabaseImpl::GetDatabase(string name) {
+  DB *db;
   if (debug) {
     LOG(INFO) << "GetDatabase: " << name << endl;
   }
@@ -247,24 +399,27 @@ rocksdb::DB *DatabaseImpl::GetDatabase(string name) {
     return 0;
   }
 
-  DB *db = databases[name];
-  if (db == nullptr) {
-    if (debug) {
-      LOG(INFO) << "Database pointer = null: opening database" << endl;
-    }
-    Options options;
-    options.IncreaseParallelism();
-    options.OptimizeLevelStyleCompaction();
-    ROCKSDB_NAMESPACE::Status status = DB::Open(options, path, &db);
-    if (!status.ok()) {
-      LOG(ERROR) << "Error: Status = " << status.ToString() << endl;
-      return 0;
-    }
+  propane::PropaneDatabase selectedDatabase;
+  if (FindDatabaseInList(name, selectedDatabase)) {
+    db = databases[selectedDatabase.id()];
+    if (db == nullptr) {
+      if (debug) {
+        LOG(INFO) << "Database pointer = null: opening database" << endl;
+      }
+      Options options;
+      options.IncreaseParallelism();
+      options.OptimizeLevelStyleCompaction();
+      ROCKSDB_NAMESPACE::Status status = DB::Open(options, path, &db);
+      if (!status.ok()) {
+        LOG(ERROR) << "Error: Status = " << status.ToString() << endl;
+        return 0;
+      }
 
-    databases[name] = db;
-  } else {
-    if (debug) {
-      LOG(INFO) << "Re use database pointer " << endl;
+      databases[name] = db;
+    } else {
+      if (debug) {
+        LOG(INFO) << "Re use database pointer " << endl;
+      }
     }
   }
 
@@ -285,8 +440,16 @@ grpc::Status DatabaseImpl::Put(Metadata *metadata,
   Any any = (request->entity()).data();
   string typeUrl = any.type_url();
   string typeName = Util::getTypeName(typeUrl);
+
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
+
+  auto dp = GetDescriptorPool(selectedDatabase);
   const google::protobuf::Descriptor *descriptor =
-      this->descriptorPools[databaseName]->FindMessageTypeByName(typeName);
+      dp.FindMessageTypeByName(typeName);
   if (descriptor == nullptr) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND,
                         "Descriptor with this type was not found");
@@ -337,11 +500,13 @@ grpc::Status DatabaseImpl::Get(Metadata *metadata,
   }
 
   rocksdb::DB *db = GetDatabase(databaseName);
+  if (db == nullptr) {
+    return grpc::Status(grpc::StatusCode::INTERNAL, "Cannot find database");
+  }
 
   string serializedAny;
   ROCKSDB_NAMESPACE::Status s =
-      GetDatabase(databaseName)
-          ->Get(ReadOptions(), request->id(), &serializedAny);
+      db->Get(ReadOptions(), request->id(), &serializedAny);
   if (!s.ok()) {
     LOG(INFO) << "Error:" << s.ToString() << endl;
     return grpc::Status(grpc::StatusCode::INTERNAL, s.ToString());
@@ -394,13 +559,19 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata,
     return grpc::Status(grpc::StatusCode::INTERNAL, "Database name is empty");
   }
 
-  // request->entitytype()
-  // Any any = (request->entity()).data();
-  // string typeUrl = any.type_url();
+  propane::PropaneDatabase selectedDatabase;
+  if (!FindDatabaseInList(databaseName, selectedDatabase)) {
+    return grpc::Status(grpc::StatusCode::INTERNAL,
+                        "Error: Database not found in list");
+  }
   string requestTypeName = Util::getTypeName(request->entitytype());
+  auto dp = GetDescriptorPool(selectedDatabase);
   const google::protobuf::Descriptor *descriptor =
-      this->descriptorPools[databaseName]->FindMessageTypeByName(
-          requestTypeName);
+      dp.FindMessageTypeByName(requestTypeName);
+
+  // const google::protobuf::Descriptor *descriptor =
+  //     this->descriptorPools[databaseName]->FindMessageTypeByName(
+  //         requestTypeName);
   if (descriptor == nullptr) {
     return grpc::Status(grpc::StatusCode::NOT_FOUND, "Descriptor not found");
   }
@@ -434,8 +605,10 @@ grpc::Status DatabaseImpl::Search(Metadata *metadata,
       if (debug) {
         LOG(INFO) << "correct entity type" << endl;
       }
+      // const google::protobuf::Descriptor *descriptor =
+      //     this->descriptorPools[databaseName]->FindMessageTypeByName(typeName);
       const google::protobuf::Descriptor *descriptor =
-          this->descriptorPools[databaseName]->FindMessageTypeByName(typeName);
+          dp.FindMessageTypeByName(typeName);
       if (descriptor != nullptr) {
         // LOG(INFO) << "Unpack Any to Message" << endl;
         google::protobuf::Message *message =

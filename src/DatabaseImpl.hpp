@@ -39,18 +39,29 @@ class DatabaseImpl
 private:
     string databasePath;
     string backupPath;
-    google::protobuf::SimpleDescriptorDatabase *descriptorDB;
-    //const google::protobuf::DescriptorPool *pool;
+    string databaseListFilename;
+
     google::protobuf::DynamicMessageFactory dmf;
     QueryParser *queryParser;
     map<string, rocksdb::DB *> databases;
-    map<string, google::protobuf::DescriptorPool *> descriptorPools;
+
+    propane::PropaneDatabases databaseList;
     bool debug;
+    
 
     static bool IsCorrectEntityType(google::protobuf::Any *any, std::string type);
     rocksdb::DB *GetDatabase(string name);
     void CloseDatabases();
     void onDecompressError(const void* pSender, std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string>& info);
+
+    bool ReadDatabaseList();
+    bool WriteDatabaseList();
+    //void CreateDatabaseList();
+    propane::PropaneDatabase* AddDatabaseToList(propane::PropaneDatabase entry);
+    bool FindDatabaseInList(string databaseName, propane::PropaneDatabase &output);
+    bool UpdateDatabaseInList(propane::PropaneDatabase entry);
+    bool DeleteDatabaseFromList(string uuid);
+    google::protobuf::DescriptorPool GetDescriptorPool(propane::PropaneDatabase database);
 
 public:
     DatabaseImpl(const string &databasePath, const string &backupPath,bool debug) ;
@@ -64,11 +75,11 @@ public:
                         propane::PropaneStatus *reply);
     grpc::Status Search(Metadata *metadata, const propane::PropaneSearch *request,
                         propane::PropaneEntities *reply);
-    grpc::Status CreateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
+    grpc::Status CreateDatabase(Metadata *metadata, const propane::PropaneDatabaseRequest *request,
                                 propane::PropaneStatus *reply);
-                                    grpc::Status UpdateDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
+                                    grpc::Status UpdateDatabase(Metadata *metadata, const propane::PropaneDatabaseRequest *request,
                                 propane::PropaneStatus *reply);
-                                    grpc::Status DeleteDatabase(Metadata *metadata, const propane::PropaneDatabase *request,
+                                    grpc::Status DeleteDatabase(Metadata *metadata, const propane::PropaneDatabaseRequest *request,
                                 propane::PropaneStatus *reply);
 
     grpc::Status Backup(Metadata *metadata, const string &databaseName, const string &zipFilePath);
