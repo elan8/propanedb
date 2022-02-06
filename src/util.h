@@ -71,7 +71,6 @@ class Util {
     std::filesystem::path p1;
     p1 += path;
     p1 /= fileName;
-    // string path = p1.generic_string();
     return p1.generic_string();
   }
 

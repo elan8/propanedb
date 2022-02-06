@@ -6,11 +6,8 @@ namespace fs = std::filesystem;
 #include "Poco/Zip/Decompress.h"
 #include "rocksdb/db.h"
 #include "rocksdb/utilities/backupable_db.h"
-
 #include <boost/filesystem.hpp>
-
 #include "Poco/Delegate.h"
-
 #include "DatabaseImpl.hpp"
 
 DatabaseImpl::DatabaseImpl(const string &databasePath, const string &backupPath,

@@ -51,10 +51,8 @@ class DatabaseImpl {
   void onDecompressError(
       const void *pSender,
       std::pair<const Poco::Zip::ZipLocalFileHeader, const std::string> &info);
-
   bool ReadDatabaseList();
   bool WriteDatabaseList();
-  // void CreateDatabaseList();
   propane::PropaneDatabase *AddDatabaseToList(propane::PropaneDatabase entry);
   bool FindDatabaseInList(string databaseName,
                           propane::PropaneDatabase &output);
